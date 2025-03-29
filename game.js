@@ -13,7 +13,7 @@ const game = new Phaser.Game(config);
 
 function preload () {
     // Εδώ μπορούμε να φορτώσουμε στοιχεία όπως εικόνες, ήχους κ.λπ.
-    this.load.setBaseURL('http://labs.phaser.io'); // Για παραδείγματα
+    this.load.setBaseURL('https://labs.phaser.io'); // Για παραδείγματα
     this.load.image('sky', 'assets/skies/space3.png');
 }
 
