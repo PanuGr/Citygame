@@ -1,12 +1,17 @@
 const config = {
     type: Phaser.AUTO, // Αυτό θα επιλέξει αυτόματα WebGL ή Canvas ανάλογα με το διαθέσιμο
-    width: 800,       // Πλάτος του καμβά
-    height: 600,      // Ύψος του καμβά
+    width: 800, // Πλάτος του καμβά
+    height: 600, // Ύψος του καμβά
     scene: {
         preload: preload,
         create: create,
         update: update
+    },
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     }
+
 };
 
 const game = new Phaser.Game(config);
