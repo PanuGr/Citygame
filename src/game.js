@@ -16,20 +16,21 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-// Grid dimensions
-const tileSize = 32; // Size of each tile in pixels [cite: 29]
-const gridWidth = 25;  // Number of tiles horizontally (800 / 32 = 25)
-const gridHeight = 18; // Number of tiles vertically (600 / 32 = 18.75, so we'll use 18)
+// Grid dimensions are affected by canva's size. They affect also the mouse coordinates
+const tileSize = 50; // Size of each tile in pixels [cite: 29]
+const gridWidth = Math.round(config.width / tileSize); // Number of tiles horizontally (800 / 32 = 25)
+const gridHeight = Math.round(config.height / tileSize); // Number of tiles vertically (600 / 32 = 18.75, so we'll use 18)
+console.log(gridWidth, gridHeight);
 let gridData = [];      // 2D array to store grid data
 
-function preload () {
-    this.load.setBaseURL('https://labs.phaser.io'); // Για παραδείγματα
-  //  this.load.image('sky', 'assets/skies/space3.png');
-   // this.load.image('grass', 'assets/grass.png'); // Placeholder grass tile
-   // this.load.image('building', 'assets/building.png'); // Placeholder building tile
+function preload() {
+    // this.load.setBaseURL('/'); // Για παραδείγματα
+    // this.load.image('grass', 'assets/Grass.jpg'); // Placeholder grass tile
+    //  this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
+    // this.load.image('building', 'assets/building.png'); // Placeholder building tile
 }
 
-function create () {
+function create() {
     console.log("Η σκηνή δημιουργήθηκε!");
 
     // Generate grass tile
@@ -61,8 +62,34 @@ function create () {
             this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
         }
     }
+
+    // Handle mouse clicks for building placement
+    this.input.on('pointerdown', (pointer) => {
+        const gridPos = getGridPosFromMouse(pointer);
+        const gridX = gridPos.x;
+        const gridY = gridPos.y;
+
+        // Check if the grid cell is empty
+        if (gridData[gridX][gridY] === 0) {
+            // Place a building at the snapped grid position
+            this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, 'building');
+
+            // Update grid data to mark the cell as occupied
+            gridData[gridX][gridY] = 1; // 1 represents a building
+            console.log(`Building placed at grid x: ${gridX}, y: ${gridY}`);
+        } else {
+            console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied.`);
+        }
+    });
+
 }
 
-function update () {
+function update() {
     // This function is called every frame
+}
+
+function getGridPosFromMouse(pointer) {
+    const x = Math.floor(pointer.x / tileSize);
+    const y = Math.floor(pointer.y / tileSize);
+    return { x, y };
 }
