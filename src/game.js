@@ -37,6 +37,8 @@ function create() {
     let grassTile = this.add.graphics();
     grassTile.fillStyle(0x008000); // Green color
     grassTile.fillRect(0, 0, tileSize, tileSize);
+    grassTile.lineStyle(1, 0x000000, 1); // Border style (thickness, color, alpha)
+    grassTile.strokeRect(0, 0, tileSize, tileSize); // Draw the rectangle outline
     grassTile.generateTexture('grass', tileSize, tileSize);
     grassTile.destroy(); // Destroy the graphics object after generating the texture
 
