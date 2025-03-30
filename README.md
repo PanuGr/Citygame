@@ -1,7 +1,7 @@
 # Citygame
 A 2D city simulation games
 
-## **Deconstructing Your Vision: A Simplified 2D City Builder**
+## ** A Simplified 2D City Builder**
 
 The scope of a "simplified" 2D version of Cities Skylines. The core essence of such a project would likely revolve around a few key interactive elements that capture the fundamental experience of building and managing a city. These foundational components, achievable as a first project, would include a tile-based map forming the canvas upon which the city will grow 1. Basic zoning, allowing for the designation of areas for residential, commercial, and industrial development 3. Furthermore, a rudimentary system for resource management, population tracking, a basic form of virtual currency, and perhaps the provision of essential utilities 6. Finally, the introduction of fundamental simulation mechanics, such as population growth influenced by residential zones and the fulfillment of basic citizen needs. 9.
 
