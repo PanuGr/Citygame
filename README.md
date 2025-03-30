@@ -28,5 +28,3 @@ A simplified 2D city-building game will necessitate the implementation of severa
 - **Zoning** is another essential element, allowing players to designate specific areas for different types of urban development, such as residential zones for housing, commercial zones for shops and services, and potentially industrial zones for production. This zoning system will influence the types of buildings that can be constructed in designated areas. Α beginner-friendly approach would involve basic zone designations that guide building placement.
 
 - **Βasic simulation mechanics** will begin to give life to your city. This could start with simple population growth within residential zones and the introduction of basic needs or happiness levels for your citizens. Implementing a system of basic zoning will directly impact how resources are generated and managed, as different zone types will inherently produce different outputs and have varying requirements.
-
-These core components of a city-building game are interconnected and must work in concert to deliver a cohesive and engaging gameplay experience, even in a simplified 2D format.
