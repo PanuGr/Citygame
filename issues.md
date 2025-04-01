@@ -14,5 +14,5 @@
 
 ## In-game
 - more buildings
-- building that is bigger than 1 tile, buildings lvl-up
-- preview of the selected building
+- cost of buildings?
+- building 1x1, buildings lvl-up?

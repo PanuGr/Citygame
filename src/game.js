@@ -1,7 +1,7 @@
 const config = {
-    type: Phaser.AUTO, // Αυτό θα επιλέξει αυτόματα WebGL ή Canvas ανάλογα με το διαθέσιμο
-    width: 800, // Πλάτος του καμβά
-    height: 600, // Ύψος του καμβά
+    type: Phaser.AUTO,
+    width: 800,
+    height: 600,
     scene: {
         preload: preload,
         create: create,
@@ -15,71 +15,84 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-// Grid dimensions are affected by canva's size. They affect also the mouse coordinates
-const tileSize = 50; // Size of each tile in pixels 
-const gridWidth = Math.round(config.width / tileSize); 
+const tileSize = 50;
+const gridWidth = Math.round(config.width / tileSize);
 const gridHeight = Math.round(config.height / tileSize);
 console.log("Grid dimensions:", gridWidth, gridHeight);
-let gridData = [];      // 2D array to store grid data
-let selectedBuildingType = null; //  Μεταβλητή για τον τρέχοντα επιλεγμένο τύπο κτιρίου
 
-//  Ορισμός τύπων κτιρίων
-const BuildingTypes = {
-    HOUSE: 'house',
-    FACTORY: 'factory'
+let gridData = [];
+let selectedBuildingType = null; // Will store the key like 'HOUSE' or 'FACTORY'
+
+// --- NEW: Consolidated Building Data ---
+const BUILDING_DATA = {
+    HOUSE: {
+        textureKey: 'building_house', // Unique texture key
+        cost: 50,
+        displayName: 'House'
+        // Future properties like income, population effect, etc. can go here
+    },
+    FACTORY: {
+        textureKey: 'building_factory', // Unique texture key
+        cost: 150,
+        displayName: 'Factory'
+        // Future properties like pollution, jobs, etc. can go here
+    }
+    // Add more building types here later
 };
 
+// Player resources (as before)
+let playerMoney = 1000;
+let moneyText;
+
+
 function preload() {
-    // this.load.setBaseURL('/'); // Για παραδείγματα
-    // this.load.image('grass', 'assets/Grass.jpg'); // Placeholder grass tile
-    //  this.load.image('sky', 'https://labs.phaser.io/assets/skies/space3.png');
-    // this.load.image('building', 'assets/building.png'); // Placeholder building tile
+    // No changes needed here
 }
 
 function create() {
-    console.log("Η σκηνή δημιουργήθηκε!");
+    console.log("Scene created!");
 
-    // --- Δημιουργία Υφών (Textures) ---
-
-    // Υφή Γρασιδιού (Grass Texture)
+    // --- Texture Generation (MODIFIED: Uses BUILDING_DATA) ---
+    // Grass Texture (remains the same)
     let grassTile = this.add.graphics();
-    grassTile.fillStyle(0x008000); // Green color
+    grassTile.fillStyle(0x008000);
     grassTile.fillRect(0, 0, tileSize, tileSize);
-    grassTile.lineStyle(1, 0x000000, 0.2); // Border style (thickness, color, alpha)
-    grassTile.strokeRect(0, 0, tileSize, tileSize); // Draw the rectangle outline
+    grassTile.lineStyle(1, 0x000000, 0.2);
+    grassTile.strokeRect(0, 0, tileSize, tileSize);
     grassTile.generateTexture('grass', tileSize, tileSize);
     grassTile.destroy();
 
-    //  Υφή Σπιτιού (House Texture)
+    // House Texture (Uses key from BUILDING_DATA)
     let houseTile = this.add.graphics();
-    houseTile.fillStyle(0xADD8E6); // Light Blue color for house
+    houseTile.fillStyle(0xADD8E6); // Light Blue
     houseTile.fillRect(0, 0, tileSize, tileSize);
     houseTile.lineStyle(1, 0x000000, 1);
     houseTile.strokeRect(0, 0, tileSize, tileSize);
-    // Μικρό τρίγωνο για στέγη
-    houseTile.fillStyle(0xA52A2A); // Brown color for roof
+    houseTile.fillStyle(0xA52A2A); // Brown roof
     houseTile.beginPath();
     houseTile.moveTo(0, 0);
-    houseTile.lineTo(tileSize / 2, -tileSize / 3); // Προσθήκη μικρής οροφής
+    houseTile.lineTo(tileSize / 2, -tileSize / 3);
     houseTile.lineTo(tileSize, 0);
     houseTile.closePath();
     houseTile.fillPath();
-    houseTile.generateTexture(BuildingTypes.HOUSE, tileSize, tileSize);
+    // Use textureKey from BUILDING_DATA
+    houseTile.generateTexture(BUILDING_DATA.HOUSE.textureKey, tileSize, tileSize);
     houseTile.destroy();
 
-    //  Υφή Εργοστασίου (Factory Texture)
+    // Factory Texture (Uses key from BUILDING_DATA)
     let factoryTile = this.add.graphics();
-    factoryTile.fillStyle(0x808080); // Gray color for factory
+    factoryTile.fillStyle(0x808080); // Gray
     factoryTile.fillRect(0, 0, tileSize, tileSize);
     factoryTile.lineStyle(1, 0x000000, 1);
     factoryTile.strokeRect(0, 0, tileSize, tileSize);
-    // Μικρό ορθογώνιο για καμινάδα
-    factoryTile.fillStyle(0x404040); // Darker gray
+    factoryTile.fillStyle(0x404040); // Darker gray chimney
     factoryTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
-    factoryTile.generateTexture(BuildingTypes.FACTORY, tileSize, tileSize);
+    // Use textureKey from BUILDING_DATA
+    factoryTile.generateTexture(BUILDING_DATA.FACTORY.textureKey, tileSize, tileSize);
     factoryTile.destroy();
 
-    // --- (Grid Initialization) ---
+
+    // --- Grid Initialization (same as before) ---
     for (let x = 0; x < gridWidth; x++) {
         gridData[x] = [];
         for (let y = 0; y < gridHeight; y++) {
@@ -87,56 +100,64 @@ function create() {
         }
     }
 
-    // --- (Tilemap Creation) ---
+    // --- Tilemap Creation (same as before) ---
     for (let x = 0; x < gridWidth; x++) {
         for (let y = 0; y < gridHeight; y++) {
             this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
         }
     }
 
-    // ---(Toolbar Creation) ---
-    const toolbarY = config.height - tileSize * 1.5; // Θέση Υ της γραμμής εργαλείων
+    // --- HUD Elements (same as before) ---
+    this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
+    moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
+
+    // --- Toolbar Creation (MODIFIED: Uses BUILDING_DATA) ---
+    const toolbarY = config.height - tileSize * 1.5;
     const buttonWidth = tileSize * 1.5;
     const buttonHeight = tileSize;
     const buttonSpacing = tileSize * 0.5;
+    let currentButtonX = tileSize; // Starting X for buttons
 
-    // Δημιουργία κουμπιού για το Σπίτι
-    const houseButtonBg = this.add.rectangle(tileSize, toolbarY, buttonWidth, buttonHeight, 0xcccccc).setInteractive();
-    this.add.image(tileSize, toolbarY, BuildingTypes.HOUSE).setDisplaySize(tileSize * 0.8, tileSize * 0.8); // Εμφάνιση μικρότερης εικόνας στο κουμπί
-    this.add.text(tileSize, toolbarY + buttonHeight / 2.5, 'House', { fontSize: '12px', color: '#000000' }).setOrigin(0.5);
+    // Loop through BUILDING_DATA to create buttons dynamically
+    for (const buildingKey in BUILDING_DATA) { // e.g., buildingKey = 'HOUSE', then 'FACTORY'
+        const data = BUILDING_DATA[buildingKey]; // e.g., data = { textureKey: '...', cost: ..., ... }
 
-    houseButtonBg.on('pointerdown', () => { // [cite: 19]
-        selectedBuildingType = BuildingTypes.HOUSE; // 
-        console.log('Selected building type:', selectedBuildingType);
-        // hover-effect
-        houseButtonBg.setFillStyle(0xaaaaaa);
-        factoryButtonBg.setFillStyle(0xcccccc);
-    });
+        const buttonBg = this.add.rectangle(currentButtonX, toolbarY, buttonWidth, buttonHeight, 0xcccccc).setInteractive();
+        // Use data.textureKey for the image
+        this.add.image(currentButtonX, toolbarY, data.textureKey).setDisplaySize(tileSize * 0.8, tileSize * 0.8);
+        // Use data.displayName and data.cost for the text
+        this.add.text(currentButtonX, toolbarY + buttonHeight / 3, `${data.displayName}\n($${data.cost})`, { fontSize: '10px', color: '#000000', align: 'center' }).setOrigin(0.5);
 
-    // Δημιουργία κουμπιού για το Εργοστάσιο
-    const factoryButtonX = tileSize + buttonWidth + buttonSpacing;
-    const factoryButtonBg = this.add.rectangle(factoryButtonX, toolbarY, buttonWidth, buttonHeight, 0xcccccc).setInteractive();
-    this.add.image(factoryButtonX, toolbarY, BuildingTypes.FACTORY).setDisplaySize(tileSize * 0.8, tileSize * 0.8);
-    this.add.text(factoryButtonX, toolbarY + buttonHeight / 2.5, 'Factory', { fontSize: '12px', color: '#000000' }).setOrigin(0.5);
+        // Store the key ('HOUSE' or 'FACTORY') when button is clicked
+        buttonBg.setData('buildingKey', buildingKey); // Store the key on the button object
+        buttonBg.setData('background', buttonBg); // Store reference to itself for easy styling
 
-    factoryButtonBg.on('pointerdown', () => { // [cite: 19]
-        selectedBuildingType = BuildingTypes.FACTORY; // [cite: 20]
-        console.log('Selected building type:', selectedBuildingType);
-        // hover-effect
-        factoryButtonBg.setFillStyle(0xaaaaaa);
-        houseButtonBg.setFillStyle(0xcccccc);
-    });
+        buttonBg.on('pointerdown', function () {
+            selectedBuildingType = this.getData('buildingKey'); // Retrieve the key ('HOUSE' or 'FACTORY')
+            console.log('Selected building type:', selectedBuildingType);
+
+            // Reset all button backgrounds
+            this.scene.children.list.forEach(child => {
+                if (child.getData && child.getData('background')) {
+                    child.getData('background').setFillStyle(0xcccccc);
+                }
+            });
+            // Highlight the clicked button
+            this.getData('background').setFillStyle(0xaaaaaa);
+        });
+
+        currentButtonX += buttonWidth + buttonSpacing; // Move X for the next button
+    }
 
 
-    // --- Χειρισμός Κλικ στο Πλέγμα (Grid Click Handling) ---
+    // --- Grid Click Handling (MODIFIED: Uses BUILDING_DATA) ---
     this.input.on('pointerdown', (pointer) => {
-        // Αγνοούμε τα κλικ πάνω στη γραμμή εργαλείων
+        // Ignore clicks on the toolbar area (simple check, might need refinement)
         if (pointer.y >= toolbarY - buttonHeight / 2) {
             return;
         }
 
-        // Έλεγχος αν έχει επιλεγεί κάποιος τύπος κτιρίου
-        if (!selectedBuildingType) {
+        if (!selectedBuildingType) { // selectedBuildingType is now 'HOUSE' or 'FACTORY'
             console.log("Please select a building type from the toolbar first.");
             return;
         }
@@ -145,33 +166,45 @@ function create() {
         const gridX = gridPos.x;
         const gridY = gridPos.y;
 
-        // Έλεγχος ορίων πλέγματος
         if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) {
             console.log("Cannot place building outside the grid.");
             return;
         }
 
-
-        // Έλεγχος αν το κελί του πλέγματος είναι άδειο 
         if (gridData[gridX][gridY] === null) {
-            // Τοποθέτηση του επιλεγμένου κτιρίου στη θέση του πλέγματος
-            this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, selectedBuildingType);
+            // Get data for the selected building type
+            const buildingInfo = BUILDING_DATA[selectedBuildingType];
+            const cost = buildingInfo.cost;
 
-            // Ενημέρωση των δεδομένων του πλέγματος για να επισημανθεί το κελί ως κατειλημμένο με τον τύπο του κτιρίου
-            gridData[gridX][gridY] = selectedBuildingType;
-            console.log(`${selectedBuildingType} placed at grid x: ${gridX}, y: ${gridY}`);
+            if (playerMoney >= cost) {
+                // Use textureKey from buildingInfo
+                this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, buildingInfo.textureKey);
+
+                // Store the building key ('HOUSE' or 'FACTORY') in gridData
+                gridData[gridX][gridY] = selectedBuildingType;
+
+                playerMoney -= cost;
+                moneyText.setText(`Money: $${playerMoney}`);
+
+                console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
+
+            } else {
+                console.log(`Cannot place ${buildingInfo.displayName}. Cost: $${cost}, Money: $${playerMoney}. Insufficient funds.`);
+            }
         } else {
-            console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied by ${gridData[gridX][gridY]}.`); // [cite: 14]
+            // Get the display name of the existing building
+            const existingBuildingKey = gridData[gridX][gridY];
+            const existingBuildingName = BUILDING_DATA[existingBuildingKey]?.displayName || 'Unknown Building'; // Use ?. for safety
+            console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied by ${existingBuildingName}.`);
         }
     });
 
 }
 
 function update() {
-    // Αυτή η συνάρτηση καλείται κάθε καρέ
+    // No changes needed here for now
 }
 
-// Βοηθητική συνάρτηση για τη λήψη συντεταγμένων πλέγματος από τις συντεταγμένες του ποντικιού
 function getGridPosFromMouse(pointer) {
     const x = Math.floor(pointer.x / tileSize);
     const y = Math.floor(pointer.y / tileSize);
