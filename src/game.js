@@ -17,13 +17,13 @@ const game = new Phaser.Game(config);
 
 // Grid dimensions are affected by canva's size. They affect also the mouse coordinates
 const tileSize = 50; // Size of each tile in pixels 
-const gridWidth = Math.round(config.width / tileSize); // Number of tiles horizontally (800 / 50 = 16)
-const gridHeight = Math.round(config.height / tileSize); // Number of tiles vertically (600 / 50 = 12)
+const gridWidth = Math.round(config.width / tileSize); 
+const gridHeight = Math.round(config.height / tileSize);
 console.log("Grid dimensions:", gridWidth, gridHeight);
 let gridData = [];      // 2D array to store grid data
-let selectedBuildingType = null; // ΝΕΟ: Μεταβλητή για τον τρέχοντα επιλεγμένο τύπο κτιρίου
+let selectedBuildingType = null; //  Μεταβλητή για τον τρέχοντα επιλεγμένο τύπο κτιρίου
 
-// ΝΕΟ: Ορισμός τύπων κτιρίων
+//  Ορισμός τύπων κτιρίων
 const BuildingTypes = {
     HOUSE: 'house',
     FACTORY: 'factory'
@@ -50,7 +50,7 @@ function create() {
     grassTile.generateTexture('grass', tileSize, tileSize);
     grassTile.destroy();
 
-    // ΝΕΟ: Υφή Σπιτιού (House Texture)
+    //  Υφή Σπιτιού (House Texture)
     let houseTile = this.add.graphics();
     houseTile.fillStyle(0xADD8E6); // Light Blue color for house
     houseTile.fillRect(0, 0, tileSize, tileSize);
@@ -67,7 +67,7 @@ function create() {
     houseTile.generateTexture(BuildingTypes.HOUSE, tileSize, tileSize);
     houseTile.destroy();
 
-    // ΝΕΟ: Υφή Εργοστασίου (Factory Texture)
+    //  Υφή Εργοστασίου (Factory Texture)
     let factoryTile = this.add.graphics();
     factoryTile.fillStyle(0x808080); // Gray color for factory
     factoryTile.fillRect(0, 0, tileSize, tileSize);
@@ -94,7 +94,7 @@ function create() {
         }
     }
 
-    // --- ΝΕΟ: Δημιουργία Γραμμής Εργαλείων (Toolbar Creation) ---
+    // ---(Toolbar Creation) ---
     const toolbarY = config.height - tileSize * 1.5; // Θέση Υ της γραμμής εργαλείων
     const buttonWidth = tileSize * 1.5;
     const buttonHeight = tileSize;
@@ -106,9 +106,9 @@ function create() {
     this.add.text(tileSize, toolbarY + buttonHeight / 2.5, 'House', { fontSize: '12px', color: '#000000' }).setOrigin(0.5);
 
     houseButtonBg.on('pointerdown', () => { // [cite: 19]
-        selectedBuildingType = BuildingTypes.HOUSE; // [cite: 20]
+        selectedBuildingType = BuildingTypes.HOUSE; // 
         console.log('Selected building type:', selectedBuildingType);
-        // Προαιρετικά: Προσθήκη οπτικής ένδειξης επιλογής
+        // hover-effect
         houseButtonBg.setFillStyle(0xaaaaaa);
         factoryButtonBg.setFillStyle(0xcccccc);
     });
@@ -122,7 +122,7 @@ function create() {
     factoryButtonBg.on('pointerdown', () => { // [cite: 19]
         selectedBuildingType = BuildingTypes.FACTORY; // [cite: 20]
         console.log('Selected building type:', selectedBuildingType);
-        // Προαιρετικά: Προσθήκη οπτικής ένδειξης επιλογής
+        // hover-effect
         factoryButtonBg.setFillStyle(0xaaaaaa);
         houseButtonBg.setFillStyle(0xcccccc);
     });
@@ -152,12 +152,12 @@ function create() {
         }
 
 
-        // Έλεγχος αν το κελί του πλέγματος είναι άδειο [cite: 13]
+        // Έλεγχος αν το κελί του πλέγματος είναι άδειο 
         if (gridData[gridX][gridY] === null) {
-            // Τοποθέτηση του επιλεγμένου κτιρίου στη θέση του πλέγματος [cite: 21]
+            // Τοποθέτηση του επιλεγμένου κτιρίου στη θέση του πλέγματος
             this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, selectedBuildingType);
 
-            // Ενημέρωση των δεδομένων του πλέγματος για να επισημανθεί το κελί ως κατειλημμένο με τον τύπο του κτιρίου [cite: 12, 22]
+            // Ενημέρωση των δεδομένων του πλέγματος για να επισημανθεί το κελί ως κατειλημμένο με τον τύπο του κτιρίου
             gridData[gridX][gridY] = selectedBuildingType;
             console.log(`${selectedBuildingType} placed at grid x: ${gridX}, y: ${gridY}`);
         } else {
