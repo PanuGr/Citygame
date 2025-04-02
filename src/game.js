@@ -40,9 +40,11 @@ const BUILDING_DATA = {
     // Add more building types here later
 };
 
-// Player resources (as before)
+// Player resources
 let playerMoney = 1000;
 let moneyText;
+// --- Game Tick Counter (optional, for demonstration) ---
+let tickCounter = 0;
 
 
 function preload() {
@@ -92,7 +94,7 @@ function create() {
     factoryTile.destroy();
 
 
-    // --- Grid Initialization (same as before) ---
+    // --- Grid Initialization ---
     for (let x = 0; x < gridWidth; x++) {
         gridData[x] = [];
         for (let y = 0; y < gridHeight; y++) {
@@ -100,18 +102,18 @@ function create() {
         }
     }
 
-    // --- Tilemap Creation (same as before) ---
+    // --- Tilemap Creation ---
     for (let x = 0; x < gridWidth; x++) {
         for (let y = 0; y < gridHeight; y++) {
             this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
         }
     }
 
-    // --- HUD Elements (same as before) ---
+    // --- HUD Elements ---
     this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
     moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
 
-    // --- Toolbar Creation (MODIFIED: Uses BUILDING_DATA) ---
+    // --- Toolbar Creation ---
     const toolbarY = config.height - tileSize * 1.5;
     const buttonWidth = tileSize * 1.5;
     const buttonHeight = tileSize;
@@ -150,9 +152,9 @@ function create() {
     }
 
 
-    // --- Grid Click Handling (MODIFIED: Uses BUILDING_DATA) ---
+    // --- Grid Click Handling ---
     this.input.on('pointerdown', (pointer) => {
-        // Ignore clicks on the toolbar area (simple check, might need refinement)
+        // Ignore clicks on the toolbar area (simple check, needs refinement. the toolbar takes all the width)
         if (pointer.y >= toolbarY - buttonHeight / 2) {
             return;
         }
@@ -197,6 +199,18 @@ function create() {
             const existingBuildingName = BUILDING_DATA[existingBuildingKey]?.displayName || 'Unknown Building'; // Use ?. for safety
             console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied by ${existingBuildingName}.`);
         }
+
+        // --- Time Progression Setup ---
+        // Create a timed event that repeats every 5 seconds (5000 milliseconds)
+        this.time.addEvent({
+            delay: 5000,                // milliseconds
+            callback: gameTick,         // function to call
+            callbackScope: this,        // scope for the callback
+            loop: true                  // repeat forever
+        });
+
+        console.log("Time progression started (tick every 5 seconds).");
+
     });
 
 }
@@ -209,4 +223,23 @@ function getGridPosFromMouse(pointer) {
     const x = Math.floor(pointer.x / tileSize);
     const y = Math.floor(pointer.y / tileSize);
     return { x, y };
+}
+
+// --- Function called by the Timer Event ---
+function gameTick() {
+    tickCounter++;
+    console.log(`Game Tick ${tickCounter}`);
+
+    // --- FUTURE WORK ---
+    // This is where we will add logic for:
+    // - Income generation (e.g., loop through gridData, find houses/factories, add money)
+    // - Population changes
+    // - Resource consumption/production
+    // - Checking game conditions (win/lose)
+    // -----------------
+
+    // Example: Add $10 income per tick (just for testing)
+    // playerMoney += 10;
+    // moneyText.setText(`Money: $${playerMoney}`); // Update HUD if money changes
+    // console.log("+$10 income added.");
 }
