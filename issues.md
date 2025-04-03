@@ -30,7 +30,7 @@ pollution:2
 },
 lvl2:{
 electricityNeed:1,
-waterNeed:1
+waterNeed:1,
 pollution:1
 },
         // Future properties like income, population effect, etc. can go here
