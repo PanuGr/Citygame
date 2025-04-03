@@ -16,6 +16,23 @@
 - more buildings
 - cost of buildings?
 - building 1x1, buildings lvl-up?
+````js
+const BUILDING_DATA = {
+    HOUSE: {
+        textureKey: 'building_house', // Unique texture key
+        cost: 50,
+        displayName: 'House'
+        // Future properties like income, population effect, etc. can go here
+    },
+    FACTORY: {
+        textureKey: 'building_factory', // Unique texture key
+        cost: 150,
+        displayName: 'Factory'
+        // Future properties like pollution, jobs, etc. can go here
+    }
+    // Add more building types here later
+};
+````
 
 ## Time
 ### How the time should progress?
