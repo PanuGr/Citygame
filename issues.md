@@ -21,13 +21,36 @@ const BUILDING_DATA = {
     HOUSE: {
         textureKey: 'building_house', // Unique texture key
         cost: 50,
-        displayName: 'House'
+        displayName: 'House',
+population: 2,
+lvl1:{
+electricityNeed:2,
+waterNeed:2,
+pollution:2
+},
+lvl2:{
+electricityNeed:1,
+waterNeed:1
+pollution:1
+},
         // Future properties like income, population effect, etc. can go here
     },
     FACTORY: {
         textureKey: 'building_factory', // Unique texture key
         cost: 150,
-        displayName: 'Factory'
+        displayName: 'Factory',
+lvl1:{
+workers:4,
+electricityNeed:2,
+waterNeed:2,
+pollution:2
+},
+lvl2:{
+workers:2,
+electricityNeed:3,
+waterNeed:3,
+pollution:1
+}
         // Future properties like pollution, jobs, etc. can go here
     }
     // Add more building types here later
