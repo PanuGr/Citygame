@@ -28,13 +28,36 @@ const BUILDING_DATA = {
     HOUSE: {
         textureKey: 'building_house', // Unique texture key
         cost: 50,
-        displayName: 'House'
+        displayName: 'House',
+        population: 2,
+        lvl1: {
+            electricityNeed: 2,
+            waterNeed: 2,
+            pollution: 2
+        },
+        lvl2: {
+            electricityNeed: 1,
+            waterNeed: 1,
+            pollution: 1
+        },
         // Future properties like income, population effect, etc. can go here
     },
     FACTORY: {
         textureKey: 'building_factory', // Unique texture key
         cost: 150,
-        displayName: 'Factory'
+        displayName: 'Factory',
+        lvl1: {
+            workersNeed: 4,
+            electricityNeed: 2,
+            waterNeed: 2,
+            pollution: 2
+        },
+        lvl2: {
+            workers: 2,
+            electricityNeed: 3,
+            waterNeed: 3,
+            pollution: 1
+        }
         // Future properties like pollution, jobs, etc. can go here
     }
     // Add more building types here later
@@ -42,7 +65,12 @@ const BUILDING_DATA = {
 
 // Player resources
 let playerMoney = 1000;
+let totalPopulation = 0;
+let totalJobs = 0;
+
+// HUD TEXTS
 let moneyText;
+let unemploymentText;
 // --- Game Tick Counter (optional, for demonstration) ---
 let tickCounter = 0;
 
@@ -112,6 +140,7 @@ function create() {
     // --- HUD Elements ---
     this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
     moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
+    unemploymentText = this.add.text(10, 35, `Unemployment: 0%`, { fontSize: '16px', color: '#ffffff' });
 
     // --- Toolbar Creation ---
     const toolbarY = config.height - tileSize * 1.5;
@@ -184,9 +213,18 @@ function create() {
 
                 // Store the building key ('HOUSE' or 'FACTORY') in gridData
                 gridData[gridX][gridY] = selectedBuildingType;
-
                 playerMoney -= cost;
                 moneyText.setText(`Money: $${playerMoney}`);
+                // --- ΝΕΟ: Ενημέρωση Πληθυσμού & Θέσεων Εργασίας ---
+                if (buildingInfo.population) {
+                    totalPopulation += buildingInfo.population;
+                    console.log(`+${buildingInfo.population} population added.`);
+                }
+                // Χρησιμοποιούμε την ανάγκη σε εργαζόμενους από το lvl1 προς το παρόν
+                if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
+                    totalJobs += buildingInfo.lvl1.workersNeed;
+                    console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
+                }
 
                 console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
 
@@ -225,11 +263,11 @@ function getGridPosFromMouse(pointer) {
     return { x, y };
 }
 
-// --- Function called by the Timer Event ---
+// --- Functions ---
 function gameTick() {
     tickCounter++;
     console.log(`Game Tick ${tickCounter}`);
-
+    updateUnemploymentDisplay();
     // --- FUTURE WORK ---
     // This is where we will add logic for:
     // - Income generation (e.g., loop through gridData, find houses/factories, add money)
@@ -242,4 +280,14 @@ function gameTick() {
     // playerMoney += 10;
     // moneyText.setText(`Money: $${playerMoney}`); // Update HUD if money changes
     // console.log("+$10 income added.");
+}
+
+function updateUnemploymentDisplay() {
+    let unemploymentRate = 0;
+    if (totalPopulation > 0) {
+        // Χρησιμοποιούμε Math.max(0, ...) για να μην έχουμε αρνητική ανεργία αν οι θέσεις είναι περισσότερες από τον πληθυσμό
+        unemploymentRate = Math.max(0, (totalPopulation - totalJobs) / totalPopulation) * 100;
+    }
+    unemploymentText.setText(`Unemployment: ${unemploymentRate.toFixed(1)}%`);
+    console.log(`Stats updated: Pop=<span class="math-inline">\{totalPopulation\}, Jobs\=</span>{totalJobs}, Unemployment=${unemploymentRate.toFixed(1)}%`);
 }

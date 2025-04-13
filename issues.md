@@ -40,7 +40,7 @@ pollution:1
         cost: 150,
         displayName: 'Factory',
 lvl1:{
-workers:4,
+workersNeed:4,
 electricityNeed:2,
 waterNeed:2,
 pollution:2
