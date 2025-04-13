@@ -59,7 +59,7 @@ pollution:1
 
 ## Time
 ### How the time should progress?
-The game will last 1 in-game year. In the end of the year the game stops, it's over.
+The game will last 1 in-game year. The in-game year lasts 24h in real-time. In the end of the year the game stops, it's over.
 Through the year, every month will have a random event, which might be an event or a disaster. These events will add some modifiers to the game, until the next event occurs.
 
 ## Next steps
