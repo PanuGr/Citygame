@@ -27,38 +27,50 @@ let selectedBuildingType = null; // Will store the key like 'HOUSE' or 'FACTORY'
 const BUILDING_DATA = {
     HOUSE: {
         textureKey: 'building_house', // Unique texture key
-        cost: 50,
         displayName: 'House',
+        cost: 0,
         population: 2,
         lvl1: {
-            electricityNeed: 2,
-            waterNeed: 2,
+            utilitiesNeed: 2,
             pollution: 2
         },
         lvl2: {
-            electricityNeed: 1,
-            waterNeed: 1,
+            utilitiesNeed: 1,
             pollution: 1
         },
         // Future properties like income, population effect, etc. can go here
     },
     FACTORY: {
         textureKey: 'building_factory', // Unique texture key
-        cost: 150,
         displayName: 'Factory',
+        cost: 0,
         lvl1: {
             workersNeed: 4,
-            electricityNeed: 2,
-            waterNeed: 2,
+            utilitiesNeed: 2,
             pollution: 2
         },
         lvl2: {
             workers: 2,
-            electricityNeed: 3,
-            waterNeed: 3,
+            utilitiesNeed: 3,
             pollution: 1
         }
         // Future properties like pollution, jobs, etc. can go here
+    },
+    UTILITIES_DIRTY: {
+        textureKey: 'utility_station',
+        displayName: 'Utilities Station',
+        cost: 200,
+        workersNeed: 1,
+        utilitiesProvide: (gridWidth * gridHeight) / 2,
+        pollution: 2
+    },
+    UTILITIES_CLEAN: {
+        textureKey: 'clean_station',
+        displayName: 'Green Station',
+        cost: 400,
+        workersNeed: 0,
+        utilitiesProvide: (gridWidth * gridHeight) / 2,
+        pollution: 0
     }
     // Add more building types here later
 };
@@ -67,10 +79,16 @@ const BUILDING_DATA = {
 let playerMoney = 1000;
 let totalPopulation = 0;
 let totalJobs = 0;
-
+let utilities = gridWidth * gridHeight;
+let pollutionLevel = 0;
+let happiness = 100;
 // HUD TEXTS
 let moneyText;
 let unemploymentText;
+let utilitiesText;
+let pollutionText;
+let happinessText;
+
 // --- Game Tick Counter (optional, for demonstration) ---
 let tickCounter = 0;
 
@@ -121,6 +139,28 @@ function create() {
     factoryTile.generateTexture(BUILDING_DATA.FACTORY.textureKey, tileSize, tileSize);
     factoryTile.destroy();
 
+    //Utility Station Texture
+    let utilityStationTile = this.add.graphics();
+    utilityStationTile.fillStyle(0x808080); // Gray
+    utilityStationTile.fillRect(0, 0, tileSize, tileSize);
+    utilityStationTile.fillStyle(0x404040); // Darker gray chimney
+    utilityStationTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
+    // Use textureKey from BUILDING_DATA
+    utilityStationTile.generateTexture(BUILDING_DATA.UTILITIES_DIRTY.textureKey, tileSize, tileSize);
+    utilityStationTile.destroy();
+
+    //Clean utility station
+    let cleanStationTile = this.add.graphics();
+    cleanStationTile.fillStyle(0x808080); // Gray
+    cleanStationTile.fillRect(0, 0, tileSize, tileSize);
+    cleanStationTile.fillStyle(0x404040); // Darker gray chimney
+    cleanStationTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
+    // Use textureKey from BUILDING_DATA
+    cleanStationTile.generateTexture(BUILDING_DATA.UTILITIES_CLEAN.textureKey, tileSize, tileSize);
+    cleanStationTile.destroy();
+
+
+
 
     // --- Grid Initialization ---
     for (let x = 0; x < gridWidth; x++) {
@@ -138,9 +178,12 @@ function create() {
     }
 
     // --- HUD Elements ---
-    this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
+    //this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
     moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
     unemploymentText = this.add.text(10, 35, `Unemployment: 0%`, { fontSize: '16px', color: '#ffffff' });
+    utilitiesText = this.add.text(10, 60, `Utilities: ${utilities}`, { fontSize: '16px', color: '#ffffff' });
+    pollutionText = this.add.text(10, 85, `Pollution: ${pollutionLevel}`, { fontSize: '16px', color: '#ffffff' });
+    happinessText = this.add.text(10, 110, `Happiness: ${happiness}`, { fontSize: '16px', color: '#ffffff' });
 
     // --- Toolbar Creation ---
     const toolbarY = config.height - tileSize * 1.5;
@@ -220,10 +263,17 @@ function create() {
                     totalPopulation += buildingInfo.population;
                     console.log(`+${buildingInfo.population} population added.`);
                 }
-                // Χρησιμοποιούμε την ανάγκη σε εργαζόμενους από το lvl1 προς το παρόν
-                if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
-                    totalJobs += buildingInfo.lvl1.workersNeed;
-                    console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
+                // Check if the building itself has a workersNeed property.
+                if (buildingInfo.workersNeed) {
+                    totalJobs += buildingInfo.workersNeed;
+                    console.log(`+${buildingInfo.workersNeed} jobs added.`);
+                } else {
+                    // If not, check if lvl1 has a workersNeed property.
+                    if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
+                        totalJobs += buildingInfo.lvl1.workersNeed;
+                        console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
+                    }
+
                 }
 
                 console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
