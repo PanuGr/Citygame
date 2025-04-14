@@ -46,13 +46,13 @@ const BUILDING_DATA = {
         cost: 0,
         lvl1: {
             workersNeed: 4,
-            utilitiesNeed: 2,
-            pollution: 2
+            utilitiesNeed: 4,
+            pollution: 4
         },
         lvl2: {
             workers: 2,
-            utilitiesNeed: 3,
-            pollution: 1
+            utilitiesNeed: 2,
+            pollution: 2
         }
         // Future properties like pollution, jobs, etc. can go here
     },
@@ -62,7 +62,7 @@ const BUILDING_DATA = {
         cost: 200,
         workersNeed: 1,
         utilitiesProvide: (gridWidth * gridHeight) / 2,
-        pollution: 2
+        pollution: 4
     },
     UTILITIES_CLEAN: {
         textureKey: 'clean_station',
@@ -70,7 +70,7 @@ const BUILDING_DATA = {
         cost: 400,
         workersNeed: 0,
         utilitiesProvide: (gridWidth * gridHeight) / 2,
-        pollution: 0
+        pollution: 1
     }
     // Add more building types here later
 };
@@ -250,6 +250,29 @@ function create() {
             const buildingInfo = BUILDING_DATA[selectedBuildingType];
             const cost = buildingInfo.cost;
 
+            // update utilities
+            if (selectedBuildingType === 'UTILITIES_DIRTY') {
+                utilities += buildingInfo.utilitiesProvide;
+                utilitiesText.setText(`Utilities: ${utilities}`);
+            } else if (selectedBuildingType === 'UTILITIES_CLEAN') {
+                utilities += buildingInfo.utilitiesProvide;
+                utilitiesText.setText(`Utilities: ${utilities}`);
+            }
+
+            //check if building adds pollution
+            if (buildingInfo.lvl1 && buildingInfo.lvl1.pollution) {
+                pollutionLevel += buildingInfo.lvl1.pollution;
+                pollutionText.setText(`Pollution: ${pollutionLevel}`);
+            } else if (buildingInfo.lvl2 && buildingInfo.lvl2.pollution) {
+                pollutionLevel += buildingInfo.lvl2.pollution;
+                pollutionText.setText(`Pollution: ${pollutionLevel}`);
+            } else if (buildingInfo.pollution) {
+                pollutionLevel += buildingInfo.pollution;
+                pollutionText.setText(`Pollution: ${pollutionLevel}`);
+            }
+
+
+
             // --- ΝΕΟ: Ενημέρωση Πληθυσμού & Θέσεων Εργασίας ---
             if (buildingInfo.population) {
                 totalPopulation += buildingInfo.population;
@@ -273,13 +296,14 @@ function create() {
             if (buildingInfo.workersNeed) {
                 totalJobs += buildingInfo.workersNeed;
                 console.log(`+${buildingInfo.workersNeed} jobs added.`);
-            } else {
-                // If not, check if lvl1 has a workersNeed property.
-                if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
-                    totalJobs += buildingInfo.lvl1.workersNeed;
-                    console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
-                }
+            } else if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
+                totalJobs += buildingInfo.lvl1.workersNeed;
+                console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
+            } else if (buildingInfo.lvl2 && buildingInfo.lvl2.workersNeed) {
+                totalJobs += buildingInfo.lvl2.workersNeed;
+                console.log(`+${buildingInfo.lvl2.workersNeed} jobs added.`);
             }
+
         } else {
             // Get the display name of the existing building
             const existingBuildingKey = gridData[gridX][gridY];
