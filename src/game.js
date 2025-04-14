@@ -250,6 +250,12 @@ function create() {
             const buildingInfo = BUILDING_DATA[selectedBuildingType];
             const cost = buildingInfo.cost;
 
+            // --- ΝΕΟ: Ενημέρωση Πληθυσμού & Θέσεων Εργασίας ---
+            if (buildingInfo.population) {
+                totalPopulation += buildingInfo.population;
+                console.log(`+${buildingInfo.population} population added.`);
+            }
+
             if (playerMoney >= cost) {
                 // Use textureKey from buildingInfo
                 this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, buildingInfo.textureKey);
@@ -258,28 +264,21 @@ function create() {
                 gridData[gridX][gridY] = selectedBuildingType;
                 playerMoney -= cost;
                 moneyText.setText(`Money: $${playerMoney}`);
-                // --- ΝΕΟ: Ενημέρωση Πληθυσμού & Θέσεων Εργασίας ---
-                if (buildingInfo.population) {
-                    totalPopulation += buildingInfo.population;
-                    console.log(`+${buildingInfo.population} population added.`);
-                }
-                // Check if the building itself has a workersNeed property.
-                if (buildingInfo.workersNeed) {
-                    totalJobs += buildingInfo.workersNeed;
-                    console.log(`+${buildingInfo.workersNeed} jobs added.`);
-                } else {
-                    // If not, check if lvl1 has a workersNeed property.
-                    if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
-                        totalJobs += buildingInfo.lvl1.workersNeed;
-                        console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
-                    }
-
-                }
-
                 console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
 
             } else {
                 console.log(`Cannot place ${buildingInfo.displayName}. Cost: $${cost}, Money: $${playerMoney}. Insufficient funds.`);
+            }
+            // Check if the building itself has a workersNeed property.
+            if (buildingInfo.workersNeed) {
+                totalJobs += buildingInfo.workersNeed;
+                console.log(`+${buildingInfo.workersNeed} jobs added.`);
+            } else {
+                // If not, check if lvl1 has a workersNeed property.
+                if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
+                    totalJobs += buildingInfo.lvl1.workersNeed;
+                    console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
+                }
             }
         } else {
             // Get the display name of the existing building
@@ -339,5 +338,5 @@ function updateUnemploymentDisplay() {
         unemploymentRate = Math.max(0, (totalPopulation - totalJobs) / totalPopulation) * 100;
     }
     unemploymentText.setText(`Unemployment: ${unemploymentRate.toFixed(1)}%`);
-    console.log(`Stats updated: Pop=<span class="math-inline">\{totalPopulation\}, Jobs\=</span>{totalJobs}, Unemployment=${unemploymentRate.toFixed(1)}%`);
+    console.log(`Stats updated: ${totalPopulation},${totalJobs}, Unemployment=${unemploymentRate.toFixed(1)}%`);
 }
