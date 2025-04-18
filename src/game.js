@@ -72,6 +72,14 @@ const BUILDING_DATA = {
         workersNeed: 0,
         utilitiesProvide: (gridWidth * gridHeight) / 2,
         pollution: 1
+    },
+    PARK: {
+        textureKey: 'park',
+        displayName: 'Park',
+        cost: 0,
+        workersNeed: 1,
+        utilitiesNeed: 1,
+        pollution: -10
     }
     // Add more building types here later
 };
@@ -117,13 +125,6 @@ function create() {
     houseTile.fillRect(0, 0, tileSize, tileSize);
     houseTile.lineStyle(1, 0x000000, 1);
     houseTile.strokeRect(0, 0, tileSize, tileSize);
-    houseTile.fillStyle(0xA52A2A); // Brown roof
-    houseTile.beginPath();
-    houseTile.moveTo(0, 0);
-    houseTile.lineTo(tileSize / 2, -tileSize / 3);
-    houseTile.lineTo(tileSize, 0);
-    houseTile.closePath();
-    houseTile.fillPath();
     // Use textureKey from BUILDING_DATA
     houseTile.generateTexture(BUILDING_DATA.HOUSE.textureKey, tileSize, tileSize);
     houseTile.destroy();
@@ -134,8 +135,6 @@ function create() {
     factoryTile.fillRect(0, 0, tileSize, tileSize);
     factoryTile.lineStyle(1, 0x000000, 1);
     factoryTile.strokeRect(0, 0, tileSize, tileSize);
-    factoryTile.fillStyle(0x404040); // Darker gray chimney
-    factoryTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
     // Use textureKey from BUILDING_DATA
     factoryTile.generateTexture(BUILDING_DATA.FACTORY.textureKey, tileSize, tileSize);
     factoryTile.destroy();
@@ -144,7 +143,8 @@ function create() {
     let utilityStationTile = this.add.graphics();
     utilityStationTile.fillStyle(0x808080); // Gray
     utilityStationTile.fillRect(0, 0, tileSize, tileSize);
-    utilityStationTile.fillStyle(0x404040); // Darker gray chimney
+    utilityStationTile.lineStyle(1, 0x000000, 1);
+    utilityStationTile.strokeRect(0, 0, tileSize, tileSize);
     utilityStationTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
     // Use textureKey from BUILDING_DATA
     utilityStationTile.generateTexture(BUILDING_DATA.UTILITIES_DIRTY.textureKey, tileSize, tileSize);
@@ -152,13 +152,23 @@ function create() {
 
     //Clean utility station
     let cleanStationTile = this.add.graphics();
-    cleanStationTile.fillStyle(0x808080); // Gray
+    cleanStationTile.fillStyle(0x8FCE00); // yellowish
     cleanStationTile.fillRect(0, 0, tileSize, tileSize);
-    cleanStationTile.fillStyle(0x404040); // Darker gray chimney
-    cleanStationTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
+    cleanStationTile.lineStyle(1, 0x000000, 1);
+    cleanStationTile.strokeRect(0, 0, tileSize, tileSize);
     // Use textureKey from BUILDING_DATA
     cleanStationTile.generateTexture(BUILDING_DATA.UTILITIES_CLEAN.textureKey, tileSize, tileSize);
     cleanStationTile.destroy();
+
+    //Park Texture
+    let ParkTile = this.add.graphics();
+    ParkTile.fillStyle(0x6aa84f); // green
+    ParkTile.fillRect(0, 0, tileSize, tileSize);
+    ParkTile.lineStyle(1, 0x000000, 1);
+    ParkTile.strokeRect(0, 0, tileSize, tileSize);
+    // Use textureKey from BUILDING_DATA
+    ParkTile.generateTexture(BUILDING_DATA.PARK.textureKey, tileSize, tileSize);
+    ParkTile.destroy();
 
 
 
@@ -260,55 +270,6 @@ function create() {
             const buildingInfo = BUILDING_DATA[selectedBuildingType];
             const cost = buildingInfo.cost;
 
-            /*  
-            // update utilities
-             if (selectedBuildingType === 'UTILITIES_DIRTY') {
-                 utilities += buildingInfo.utilitiesProvide;
-                 utilitiesText.setText(`Utilities: ${utilities}`);
-             } else if (selectedBuildingType === 'UTILITIES_CLEAN') {
-                 utilities += buildingInfo.utilitiesProvide;
-                 utilitiesText.setText(`Utilities: ${utilities}`);
-             }
- 
-             //check if building adds pollution
-             if (buildingInfo.lvl1 && buildingInfo.lvl1.pollution) {
-                 pollutionLevel += buildingInfo.lvl1.pollution;
-                 pollutionText.setText(`Pollution: ${pollutionLevel}`);
-             } else if (buildingInfo.lvl2 && buildingInfo.lvl2.pollution) {
-                 pollutionLevel += buildingInfo.lvl2.pollution;
-                 pollutionText.setText(`Pollution: ${pollutionLevel}`);
-             } else if (buildingInfo.pollution) {
-                 pollutionLevel += buildingInfo.pollution;
-                 pollutionText.setText(`Pollution: ${pollutionLevel}`);
-             }
- 
-             // removes utilities when building is built
-             if (buildingInfo.lvl1 && buildingInfo.lvl1.utilitiesNeed) {
-                 utilities -= buildingInfo.lvl1.utilitiesNeed;
-                 utilitiesText.setText(`Utilities: ${utilities}`);
-             } else if (buildingInfo.lvl2 && buildingInfo.lvl2.utilitiesNeed) {
-                 utilities -= buildingInfo.lvl2.utilitiesNeed;
-                 utilitiesText.setText(`Utilities: ${utilities}`);
-             }
- 
-             // Check if the building itself has a workersNeed property.
-             if (buildingInfo.workersNeed) {
-                 totalJobs += buildingInfo.workersNeed;
-                 console.log(`+${buildingInfo.workersNeed} jobs added.`);
-             } else if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
-                 totalJobs += buildingInfo.lvl1.workersNeed;
-                 console.log(`+${buildingInfo.lvl1.workersNeed} jobs added.`);
-             } else if (buildingInfo.lvl2 && buildingInfo.lvl2.workersNeed) {
-                 totalJobs += buildingInfo.lvl2.workersNeed;
-                 console.log(`+${buildingInfo.lvl2.workersNeed} jobs added.`);
-             }
- 
-             // --- ΝΕΟ: Ενημέρωση Πληθυσμού & Θέσεων Εργασίας ---
-             if (buildingInfo.population) {
-                 totalPopulation += buildingInfo.population;
-                 console.log(`+${buildingInfo.population} population added.`);
-             } */
-
             if (playerMoney >= cost) {
                 // Use textureKey from buildingInfo
                 const buildingImage = this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, buildingInfo.textureKey);
@@ -388,8 +349,11 @@ function updateUnemploymentDisplay() {
     console.log(`Stats updated: ${totalPopulation},${totalJobs}, Unemployment=${unemploymentRate.toFixed(1)}%`);
 }
 
-let pollutionAlertsTriggered = { 25: false, 50: false, 75: false }; // Για να στέλνουμε alert μία φορά
-let lowUtilityAlertTriggered = false; // Για τις υπηρεσίες
+// let pollutionAlertsTriggered = { 25: false, 50: false, 75: false }; // Για να στέλνουμε alert μία φορά
+// Για alerts
+let lowUtilityAlertTriggered = false;
+let lowHappinessAlertTriggered = false;
+let highPollutionDestructionTriggered = false;
 
 function recalculateStats() {
     let currentTotalPopulation = 0;
@@ -397,7 +361,7 @@ function recalculateStats() {
     let currentUtilitiesSupply = gridWidth * gridHeight; // Base utility supply
     let currentUtilitiesDemand = 0;
     let currentPollutionLevel = 0;
-    
+
     console.log("Initial Supply:", currentUtilitiesSupply, "Demand:", currentUtilitiesDemand);
 
     for (let x = 0; x < gridWidth; x++) {
@@ -419,12 +383,12 @@ function recalculateStats() {
                     } else if (buildingInfo.lvl1 && buildingInfo.lvl1.workersNeed) {
                         currentTotalJobs += buildingInfo.lvl1.workersNeed;
                     }
-                    
+
                     // Υπηρεσίες (Παροχή & Ζήτηση)
                     if (buildingInfo.utilitiesProvide) {
                         currentUtilitiesSupply += buildingInfo.utilitiesProvide;
                     }
-                    
+
                     let demand = 0;
                     if (buildingInfo.lvl1 && buildingInfo.lvl1.utilitiesNeed) {
                         demand = buildingInfo.lvl1.utilitiesNeed;
@@ -444,9 +408,9 @@ function recalculateStats() {
             }
         }
     }
-    
+
     console.log("After Loop - Supply:", currentUtilitiesSupply, "Demand:", currentUtilitiesDemand);
-    
+
     // Ενημέρωση καθολικών μεταβλητών
     totalPopulation = currentTotalPopulation;
     totalJobs = currentTotalJobs;
@@ -458,25 +422,22 @@ function recalculateStats() {
     // Ενημέρωση HUD (εκτός ανεργίας που έχει τη δική της συνάρτηση)
     utilitiesText.setText(`Utilities: ${utilities}`);
     pollutionText.setText(`Pollution: ${pollutionLevel}`);
-
-    // --- Έλεγχος Utilities ---
-    const initialUtilities = gridWidth * gridHeight; // Η αρχική "χωρητικότητα"
-    const lowThreshold = initialUtilities * 0.25;
-    const criticalThreshold = initialUtilities * 0.15;
-
-    if (utilities < lowThreshold) {
-        utilitiesText.setColor('#ff0000'); // Κόκκινο χρώμα
-        if (utilities < criticalThreshold && !lowUtilityAlertTriggered) {
-            alert("CRITICAL ALERT: Utility levels are critically low!");
-            lowUtilityAlertTriggered = true; // Σήμανση ότι το alert εμφανίστηκε
-        }
-    } else {
-        utilitiesText.setColor('#ffffff'); // Επαναφορά σε λευκό
-        lowUtilityAlertTriggered = false; // Επαναφορά σημαίας alert
-    }
-
-    // --- Έλεγχος Ρύπανσης & Events ---
-    checkPollutionEvents(pollutionLevel);
+    /* 
+        // --- Έλεγχος Utilities ---
+        const initialUtilities = gridWidth * gridHeight; // Η αρχική "χωρητικότητα"
+        const lowThreshold = initialUtilities * 0.25;
+        const criticalThreshold = initialUtilities * 0.15;
+    
+        if (utilities < lowThreshold) {
+            utilitiesText.setColor('#ff0000'); // Κόκκινο χρώμα
+            if (utilities < criticalThreshold && !lowUtilityAlertTriggered) {
+                alert("CRITICAL ALERT: Utility levels are critically low!");
+                lowUtilityAlertTriggered = true; // Σήμανση ότι το alert εμφανίστηκε
+            }
+        } else {
+            utilitiesText.setColor('#ffffff'); // Επαναφορά σε λευκό
+            lowUtilityAlertTriggered = false; // Επαναφορά σημαίας alert
+        } */
 
     // --- Υπολογισμός & Ενημέρωση Ευτυχίας ---
     let unemploymentRate = (totalPopulation > 0) ? Math.max(0, (totalPopulation - totalJobs) / totalPopulation) * 100 : 0;
@@ -484,44 +445,70 @@ function recalculateStats() {
     let happinessDecrease = (unemploymentRate * 0.2) + (pollutionLevel * 0.2); // Προσαρμόστε τους συντελεστές
     happiness = Math.max(0, 100 - happinessDecrease); // Clamp 0-100
     happinessText.setText(`Happiness: ${happiness.toFixed(0)}%`); // Χωρίς δεκαδικά
+
+    // --- Έλεγχος Events ---
+    checkEvents(pollutionLevel, utilities, happiness);
 }
 
 // --- Νέα Συνάρτηση για Έλεγχο Events Ρύπανσης ---
-function checkPollutionEvents(currentPollution) {
-    // Ελέγχουμε τα όρια 25, 50, 75
-    [25, 50, 75].forEach(threshold => {
-        if (currentPollution >= threshold && !pollutionAlertsTriggered[threshold]) {
-            alert(`WARNING: Pollution level reached ${threshold}!`);
-            pollutionAlertsTriggered[threshold] = true;
-        } else if (currentPollution < threshold) {
-            pollutionAlertsTriggered[threshold] = false; // Επαναφορά αν πέσει κάτω από το όριο
-        }
-    });
+function checkEvents(currentPollution, utilities, happiness) {
+    /*  // Ελέγχουμε τα όρια 25, 50, 75
+     [25, 50, 75].forEach(threshold => {
+         if (currentPollution >= threshold && !pollutionAlertsTriggered[threshold]) {
+             alert(`WARNING: Pollution level reached ${threshold}!`);
+             pollutionAlertsTriggered[threshold] = true;
+         } else if (currentPollution < threshold) {
+             pollutionAlertsTriggered[threshold] = false; // Επαναφορά αν πέσει κάτω από το όριο
+         }
+     }); */
 
-    // Έλεγχος για καταστροφή κτιρίων
-    if (currentPollution > 75) { // Ίσως θέλεις μεγαλύτερο όριο εδώ;
-        console.warn("Pollution limit exceeded! Attempting to destroy buildings.");
-        destroyRandomBuildings(1 + Math.floor(Math.random() * 5)); // Κατέστρεψε εώς 5 κτίρια
+    // Pollution event
+    //const pollutionDestructionThreshold = 75;
+    if (currentPollution > 75 && !highPollutionDestructionTriggered) {
+        alert("WARNING: High pollution is causing buildings to be abandoned!");
+        destroyRandomBuildings(30); // Κατέστρεψε % κτίρια
+        // --- για να μην ξανασυμβεί αμέσως ---
+        highPollutionDestructionTriggered = true;
+    }
+
+    // Utilities event
+    //const utilitiesDestructionThreshold = 25;
+    if (utilities > 25 && !lowUtilityAlertTriggered) {
+        alert("WARNING: Low utilities is causing buildings to be abandoned!");
+        destroyRandomBuildings(50, 'FACTORY'); // Κατέστρεψε % κτίρια
+        // --- για να μην ξανασυμβεί αμέσως ---
+        lowUtilityAlertTriggered = true;
+    }
+
+    // Happiness event
+    //const happinessDestructionThreshold = 25;
+    if (happiness > 25 && !lowHappinessAlertTriggered) {
+        alert("WARNING: Low happiness is causing buildings to be abandoned!");
+        destroyRandomBuildings(50, 'HOUSE'); // Κατέστρεψε % κτίρια
+        // --- για να μην ξανασυμβεί αμέσως ---
+        lowHappinessAlertTriggered = true;
     }
 }
 
-// --- Νέα Συνάρτηση για Καταστροφή Κτιρίων ---
-function destroyRandomBuildings(count) {
-    let occupiedCells = [];
+// ---  Συνάρτηση για Καταστροφή Κτιρίων ---
+function destroyRandomBuildings(percentage, targetBuildingKey = null) {
+    let potentialTargets = [];
     for (let x = 0; x < gridWidth; x++) {
         for (let y = 0; y < gridHeight; y++) {
-            if (gridData[x][y] !== null) {
-                occupiedCells.push({ x, y });
+            const gridCell = gridData[x][y];
+            if (gridCell && gridCell.key && (targetBuildingKey === null || gridCell.key === targetBuildingKey)) {
+                potentialTargets.push({ x, y });
             }
         }
     }
 
-    if (occupiedCells.length === 0) return; // Δεν υπάρχουν κτίρια για καταστροφή
+    if (potentialTargets.length === 0) return; // Δεν υπάρχουν κτίρια για καταστροφή
+    const buildingsToDestroy = Math.floor(potentialTargets.length * (percentage / 100));
 
-    for (let i = 0; i < count && occupiedCells.length > 0; i++) {
+    for (let i = 0; i < buildingsToDestroy && potentialTargets.length > 0; i++) {
         // Επιλογή τυχαίου κατειλημμένου κελιού
-        const randomIndex = Math.floor(Math.random() * occupiedCells.length);
-        const cellToRemove = occupiedCells[randomIndex];
+        const randomIndex = Math.floor(Math.random() * potentialTargets.length);
+        const cellToRemove = potentialTargets[randomIndex];
         const { x, y } = cellToRemove;
 
         const buildingData = gridData[x][y];
@@ -532,7 +519,7 @@ function destroyRandomBuildings(count) {
         }
 
         // Αφαίρεση του κελιού από τη λίστα για να μην επιλεγεί ξανά
-        occupiedCells.splice(randomIndex, 1);
+        potentialTargets.splice(randomIndex, 1);
     }
 
     // ΣΗΜΑΝΤΙΚΟ: Επαναϋπολογισμός στατιστικών ΑΜΕΣΩΣ μετά την καταστροφή
