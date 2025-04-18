@@ -22,7 +22,7 @@ console.log("Grid dimensions:", gridWidth, gridHeight);
 
 let gridData = []; // Τώρα θα περιέχει αντικείμενα { key: '...', image: Phaser.GameObjects.Image } ή null
 let selectedBuildingType = null;
-let selectedButtonBg = null; // so we track the selected button and can remove later
+//we create html menu. This button is not needed let selectedButtonBg = null; // so we track the selected button and can remove later
 
 // --- NEW: Consolidated Building Data ---
 const BUILDING_DATA = {
@@ -97,9 +97,53 @@ let unemploymentText;
 let utilitiesText;
 let pollutionText;
 let happinessText;
-
 // --- Game Tick Counter (optional, for demonstration) ---
 let tickCounter = 0;
+
+// HTML DROPDOWN MENU
+// Function για να γεμίσει το dropdown με τα κτίρια
+function populateBuildingDropdown() {
+    const selectElement = document.getElementById('building-select');
+    if (!selectElement) {
+        console.error("Dropdown element '#building-select' not found!");
+        return;
+    }
+
+    // Προσθήκη επιλογών από το BUILDING_DATA
+    for (const buildingKey in BUILDING_DATA) {
+        const data = BUILDING_DATA[buildingKey];
+        const option = document.createElement('option');
+        option.value = buildingKey; // π.χ., 'HOUSE', 'FACTORY'
+        // Εμφάνιση ονόματος και κόστους (αν υπάρχει)
+        option.textContent = `${data.displayName}${data.cost > 0 ? ` ($${data.cost})` : ''}`;
+        selectElement.appendChild(option);
+    }
+}
+
+// Συνάρτηση που καλείται όταν αλλάζει η επιλογή στο dropdown
+function handleBuildingSelectionChange(event) {
+    const selectedValue = event.target.value;
+    if (selectedValue === "") {
+        // Αν επιλεγεί η κενή επιλογή "-- Select Building --"
+        selectedBuildingType = null;
+        console.log("Building deselected.");
+    } else {
+        selectedBuildingType = selectedValue; // Ενημέρωση της καθολικής μεταβλητής που χρησιμοποιεί το Phaser
+        console.log("Selected building type (from dropdown):", selectedBuildingType);
+    }
+    // Δεν χρειάζεται να αλλάξουμε χρώμα κουμπιού κλπ.
+}
+
+// Εκτέλεση όταν το HTML DOM είναι έτοιμο
+document.addEventListener('DOMContentLoaded', () => {
+    populateBuildingDropdown(); // Γέμισμα του dropdown
+
+    // Προσθήκη event listener για αλλαγές στο dropdown
+    const selectElement = document.getElementById('building-select');
+    if (selectElement) {
+        selectElement.addEventListener('change', handleBuildingSelectionChange);
+    }
+});
 
 
 function preload() {
@@ -196,6 +240,7 @@ function create() {
     pollutionText = this.add.text(10, 85, `Pollution: ${pollutionLevel}`, { fontSize: '16px', color: '#ffffff' });
     happinessText = this.add.text(10, 110, `Happiness: ${happiness}`, { fontSize: '16px', color: '#ffffff' });
 
+    /* 
     // --- Toolbar Creation ---
     const toolbarY = config.height - tileSize * 1.5;
     const buttonWidth = tileSize * 1.5;
@@ -242,14 +287,15 @@ function create() {
 
         currentButtonX += buttonWidth + buttonSpacing; // Move X for the next button
     }
-
+ */
 
     // --- Grid Click Handling ---
     this.input.on('pointerdown', (pointer) => {
+        /* 
         // Ignore clicks on the toolbar area (simple check, needs refinement. the toolbar takes all the width)
         if (pointer.y >= toolbarY - buttonHeight / 2) {
             return;
-        }
+        } */
 
         if (!selectedBuildingType) { // selectedBuildingType is now 'HOUSE' or 'FACTORY'
             console.log("Please select a building type from the toolbar first.");
@@ -298,11 +344,11 @@ function create() {
             //deselect a building
             if (selectedBuildingType) {
                 console.log("Deselecting building type.");
-                if (selectedButtonBg) {
-                    selectedButtonBg.setFillStyle(0xcccccc); // Επαναφορά χρώματος κουμπιού
-                }
+                /*  if (selectedButtonBg) {
+                     selectedButtonBg.setFillStyle(0xcccccc); // Επαναφορά χρώματος κουμπιού
+                 } */
                 selectedBuildingType = null;
-                selectedButtonBg = null;
+                // selectedButtonBg = null;
             }
         }
 
@@ -473,7 +519,7 @@ function checkEvents(currentPollution, utilities, happiness) {
 
     // Utilities event
     //const utilitiesDestructionThreshold = 25;
-    if (utilities > 25 && !lowUtilityAlertTriggered) {
+    if (utilities < 25 && !lowUtilityAlertTriggered) {
         alert("WARNING: Low utilities is causing buildings to be abandoned!");
         destroyRandomBuildings(50, 'FACTORY'); // Κατέστρεψε % κτίρια
         // --- για να μην ξανασυμβεί αμέσως ---
@@ -482,7 +528,7 @@ function checkEvents(currentPollution, utilities, happiness) {
 
     // Happiness event
     //const happinessDestructionThreshold = 25;
-    if (happiness > 25 && !lowHappinessAlertTriggered) {
+    if (happiness < 25 && !lowHappinessAlertTriggered) {
         alert("WARNING: Low happiness is causing buildings to be abandoned!");
         destroyRandomBuildings(50, 'HOUSE'); // Κατέστρεψε % κτίρια
         // --- για να μην ξανασυμβεί αμέσως ---
