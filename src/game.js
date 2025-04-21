@@ -214,6 +214,24 @@ function create() {
     ParkTile.generateTexture(BUILDING_DATA.PARK.textureKey, tileSize, tileSize);
     ParkTile.destroy();
 
+    // --- Object Pooling Setup ---
+    // Create pools for each building type
+    this.buildingPools = {}; // Object to hold pools for different building types
+
+    for (const buildingKey in BUILDING_DATA) {
+        this.buildingPools[buildingKey] = this.add.group({
+            maxSize: -1, // -1 means no limit, or set a number for a fixed size pool
+            runChildUpdate: false // No need to update pooled objects if they don't have update logic
+        });
+        // You might want to adjust the number based on how many buildings you expect
+        for (let i = 0; i < 10; i++) { // Example: add 10 initial instances of each building type
+            const buildingImage = this.add.image(-100, -100, BUILDING_DATA[buildingKey].textureKey); // Position off-screen
+            buildingImage.setActive(false); // Deactivate it
+            buildingImage.setVisible(false); // Make it invisible
+            this.buildingPools[buildingKey].add(buildingImage);
+        }
+        console.log(`Created pool for ${buildingKey} with ${this.buildingPools[buildingKey].getLength()} initial instances.`);
+    }
 
 
 
@@ -240,62 +258,8 @@ function create() {
     pollutionText = this.add.text(10, 85, `Pollution: ${pollutionLevel}`, { fontSize: '16px', color: '#ffffff' });
     happinessText = this.add.text(10, 110, `Happiness: ${happiness}`, { fontSize: '16px', color: '#ffffff' });
 
-    /* 
-    // --- Toolbar Creation ---
-    const toolbarY = config.height - tileSize * 1.5;
-    const buttonWidth = tileSize * 1.5;
-    const buttonHeight = tileSize;
-    const buttonSpacing = tileSize * 0.5;
-    let currentButtonX = tileSize; // Starting X for buttons
-
-    // Loop through BUILDING_DATA to create buttons dynamically
-    for (const buildingKey in BUILDING_DATA) { // e.g., buildingKey = 'HOUSE', then 'FACTORY'
-        const data = BUILDING_DATA[buildingKey]; // e.g., data = { textureKey: '...', cost: ..., ... }
-
-        const buttonBg = this.add.rectangle(currentButtonX, toolbarY, buttonWidth, buttonHeight, 0xcccccc).setInteractive();
-        // Use data.textureKey for the image
-        this.add.image(currentButtonX, toolbarY, data.textureKey).setDisplaySize(tileSize * 0.8, tileSize * 0.8);
-        // Use data.displayName and data.cost for the text
-        this.add.text(currentButtonX, toolbarY + buttonHeight / 3, `${data.displayName}\n($${data.cost})`, { fontSize: '10px', color: '#000000', align: 'center' }).setOrigin(0.5);
-
-        // Store the key ('HOUSE' or 'FACTORY') when button is clicked
-        buttonBg.setData('buildingKey', buildingKey); // Store the key on the button object
-        buttonBg.setData('background', buttonBg); // Store reference to itself for easy styling
-
-        buttonBg.on('pointerdown', function () {
-            const buildingKey = this.getData('buildingKey'); // checking for unselect
-            if (selectedBuildingType === buildingKey) {
-                console.log('Deselecting building type:', buildingKey);
-                this.getData('background').setFillStyle(0xcccccc); // Επαναφορά χρώματος
-                selectedBuildingType = null;
-                selectedButtonBg = null;
-                return; // Έξοδος
-            }
-            selectedBuildingType = buildingKey;
-            selectedButtonBg = this.getData('background'); // Αποθήκευση του επιλεγμένου κουμπιού
-            console.log('Selected building type:', selectedBuildingType);
-
-            // Reset all button backgrounds
-            this.scene.children.list.forEach(child => {
-                if (child.getData && child.getData('background') && child !== this.getData('background')) {
-                    child.getData('background').setFillStyle(0xcccccc);
-                }
-            });
-            // Highlight the clicked button
-            this.getData('background').setFillStyle(0xaaaaaa);
-        });
-
-        currentButtonX += buttonWidth + buttonSpacing; // Move X for the next button
-    }
- */
-
     // --- Grid Click Handling ---
     this.input.on('pointerdown', (pointer) => {
-        /* 
-        // Ignore clicks on the toolbar area (simple check, needs refinement. the toolbar takes all the width)
-        if (pointer.y >= toolbarY - buttonHeight / 2) {
-            return;
-        } */
 
         if (!selectedBuildingType) { // selectedBuildingType is now 'HOUSE' or 'FACTORY'
             console.log("Please select a building type from the toolbar first.");
@@ -317,18 +281,31 @@ function create() {
             const cost = buildingInfo.cost;
 
             if (playerMoney >= cost) {
-                // Use textureKey from buildingInfo
-                const buildingImage = this.add.image(gridX * tileSize + tileSize / 2, gridY * tileSize + tileSize / 2, buildingInfo.textureKey);
+                // --- Get building from the pool ---
+                const buildingImage = this.buildingPools[selectedBuildingType].get(
+                    gridX * tileSize + tileSize / 2,
+                    gridY * tileSize + tileSize / 2,
+                    buildingInfo.textureKey // Texture key is needed for the group's get method
+                );
 
-                // Αποθήκευση αντικειμένου στο gridData 
-                gridData[gridX][gridY] = {
-                    key: selectedBuildingType,
-                    image: buildingImage
-                };
+                if (buildingImage) { // Check if an object was successfully retrieved from the pool
 
-                playerMoney -= cost;
-                moneyText.setText(`Money: $${playerMoney}`);
-                console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
+                    buildingImage.setActive(true); // Activate it
+                    buildingImage.setVisible(true); // Make it visible
+                    buildingImage.setDepth(1); // Set a depth higher than the grass tiles (which have default depth 0)
+
+                    gridData[gridX][gridY] = {
+                        key: selectedBuildingType,
+                        image: buildingImage
+                    };
+                    playerMoney -= cost;
+                    moneyText.setText(`Money: $${playerMoney}`);
+                    console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
+                } else {
+                    console.log(`Could not get a ${buildingInfo.displayName} from the pool.`);
+                    // This might happen if maxSize is set and the pool is full
+                }
+
 
             } else {
                 console.log(`Cannot place ${buildingInfo.displayName}. Cost: $${cost}, Money: $${playerMoney}. Insufficient funds.`);
@@ -344,11 +321,7 @@ function create() {
             //deselect a building
             if (selectedBuildingType) {
                 console.log("Deselecting building type.");
-                /*  if (selectedButtonBg) {
-                     selectedButtonBg.setFillStyle(0xcccccc); // Επαναφορά χρώματος κουμπιού
-                 } */
                 selectedBuildingType = null;
-                // selectedButtonBg = null;
             }
         }
 
@@ -560,7 +533,7 @@ function destroyRandomBuildings(percentage, targetBuildingKey = null) {
         const buildingData = gridData[x][y];
         if (buildingData && buildingData.image) {
             console.log(`Destroying building due to pollution.`);
-            buildingData.image.destroy(); // Αφαίρεση εικόνα από τη σκηνή
+            this.buildingPools[buildingData.key].killAndHide(buildingData.image); // Use killAndHide to deactivate and hide. Return building to the pool.
             gridData[x][y] = null; // Εκκαθάριση του κελιού στο gridData
         }
 
