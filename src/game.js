@@ -147,44 +147,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 function preload() {
-    // No changes needed here
+    // --- Asset Loading ---
+    // Use: this.load.image(key, url);
+    // Texture Generation (Uses BUILDING_DATA)
+    this.load.image(BUILDING_DATA.HOUSE.textureKey, '../assets/house.png');
+    this.load.image(BUILDING_DATA.FACTORY.textureKey, '../assets/factory.svg');
+    this.load.image(BUILDING_DATA.PARK.textureKey, '../assets/park.svg');
+    this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, '../assets/Powerplant.png');
+    this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, '../assets/tower.svg');
+    // Load Audio: for sound effects or music
+    // Use: this.load.audio(key, urls); urls can be an array of different formats for browser compatibility
+    // this.load.audio('placeholder_sfx', ['assets/audio/collect.mp3', 'assets/audio/collect.ogg']);
+    // this.load.audio('placeholder_music', ['assets/audio/music.mp3', 'assets/audio/music.ogg']);
+    console.log("Preload function finished.");
 }
 
 function create() {
     console.log("Scene created!");
 
-    // --- Texture Generation (MODIFIED: Uses BUILDING_DATA) ---
+    // --- Texture Generation (Uses BUILDING_DATA) ---
     // Grass Texture (remains the same)
-    let grassTile = this.add.graphics();
-    grassTile.fillStyle(0x008000);
-    grassTile.fillRect(0, 0, tileSize, tileSize);
-    grassTile.lineStyle(1, 0x000000, 0.2);
-    grassTile.strokeRect(0, 0, tileSize, tileSize);
-    grassTile.generateTexture('grass', tileSize, tileSize);
-    grassTile.destroy();
+     let grassTile = this.add.graphics();
+     grassTile.fillStyle(0x008000);
+     grassTile.fillRect(0, 0, tileSize, tileSize);
+     grassTile.lineStyle(1, 0x000000, 0.2);
+     grassTile.strokeRect(0, 0, tileSize, tileSize);
+     grassTile.generateTexture('grass', tileSize, tileSize);
+     grassTile.destroy(); 
 
     // House Texture (Uses key from BUILDING_DATA)
-    let houseTile = this.add.graphics();
+    /* let houseTile = this.add.graphics();
     houseTile.fillStyle(0xADD8E6); // Light Blue
     houseTile.fillRect(0, 0, tileSize, tileSize);
     houseTile.lineStyle(1, 0x000000, 1);
     houseTile.strokeRect(0, 0, tileSize, tileSize);
     // Use textureKey from BUILDING_DATA
     houseTile.generateTexture(BUILDING_DATA.HOUSE.textureKey, tileSize, tileSize);
-    houseTile.destroy();
+    houseTile.destroy(); */
 
     // Factory Texture (Uses key from BUILDING_DATA)
-    let factoryTile = this.add.graphics();
+    /* let factoryTile = this.add.graphics();
     factoryTile.fillStyle(0x808080); // Gray
     factoryTile.fillRect(0, 0, tileSize, tileSize);
     factoryTile.lineStyle(1, 0x000000, 1);
     factoryTile.strokeRect(0, 0, tileSize, tileSize);
     // Use textureKey from BUILDING_DATA
     factoryTile.generateTexture(BUILDING_DATA.FACTORY.textureKey, tileSize, tileSize);
-    factoryTile.destroy();
+    factoryTile.destroy(); */
 
     //Utility Station Texture
-    let utilityStationTile = this.add.graphics();
+    /* let utilityStationTile = this.add.graphics();
     utilityStationTile.fillStyle(0x808080); // Gray
     utilityStationTile.fillRect(0, 0, tileSize, tileSize);
     utilityStationTile.lineStyle(1, 0x000000, 1);
@@ -192,27 +204,27 @@ function create() {
     utilityStationTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
     // Use textureKey from BUILDING_DATA
     utilityStationTile.generateTexture(BUILDING_DATA.UTILITIES_DIRTY.textureKey, tileSize, tileSize);
-    utilityStationTile.destroy();
+    utilityStationTile.destroy(); */
 
     //Clean utility station
-    let cleanStationTile = this.add.graphics();
+    /* let cleanStationTile = this.add.graphics();
     cleanStationTile.fillStyle(0x8FCE00); // yellowish
     cleanStationTile.fillRect(0, 0, tileSize, tileSize);
     cleanStationTile.lineStyle(1, 0x000000, 1);
     cleanStationTile.strokeRect(0, 0, tileSize, tileSize);
     // Use textureKey from BUILDING_DATA
     cleanStationTile.generateTexture(BUILDING_DATA.UTILITIES_CLEAN.textureKey, tileSize, tileSize);
-    cleanStationTile.destroy();
+    cleanStationTile.destroy(); */
 
     //Park Texture
-    let ParkTile = this.add.graphics();
+    /* let ParkTile = this.add.graphics();
     ParkTile.fillStyle(0x6aa84f); // green
     ParkTile.fillRect(0, 0, tileSize, tileSize);
     ParkTile.lineStyle(1, 0x000000, 1);
     ParkTile.strokeRect(0, 0, tileSize, tileSize);
     // Use textureKey from BUILDING_DATA
     ParkTile.generateTexture(BUILDING_DATA.PARK.textureKey, tileSize, tileSize);
-    ParkTile.destroy();
+    ParkTile.destroy(); */
 
     // --- Object Pooling Setup ---
     // Create pools for each building type
@@ -228,6 +240,8 @@ function create() {
             const buildingImage = this.add.image(-100, -100, BUILDING_DATA[buildingKey].textureKey); // Position off-screen
             buildingImage.setActive(false); // Deactivate it
             buildingImage.setVisible(false); // Make it invisible
+            buildingImage.setDisplaySize(tileSize, tileSize); // Set display size when creating for the pool
+
             this.buildingPools[buildingKey].add(buildingImage);
         }
         console.log(`Created pool for ${buildingKey} with ${this.buildingPools[buildingKey].getLength()} initial instances.`);
@@ -246,7 +260,9 @@ function create() {
     // --- Tilemap Creation ---
     for (let x = 0; x < gridWidth; x++) {
         for (let y = 0; y < gridHeight; y++) {
-            this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
+            const grassTile = this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
+           // grassTile.setDisplaySize(tileSize, tileSize);
+           // grassTile.setDepth(0);
         }
     }
 
@@ -289,7 +305,7 @@ function create() {
                 );
 
                 if (buildingImage) { // Check if an object was successfully retrieved from the pool
-
+                    buildingImage.setDisplaySize(tileSize, tileSize); // Set display size when placing on the map
                     buildingImage.setActive(true); // Activate it
                     buildingImage.setVisible(true); // Make it visible
                     buildingImage.setDepth(1); // Set a depth higher than the grass tiles (which have default depth 0)
