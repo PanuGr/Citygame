@@ -1,12 +1,240 @@
+// Define a new Scene for the Main Menu
+class MainMenuScene extends Phaser.Scene {
+    constructor() {
+        super('MainMenuScene'); // Give this scene a unique key
+    }
+
+    preload() {
+        // Load any assets specific to the Main Menu here
+        // e.g., background image, button textures
+        this.load.image('menu_background', '../assets/background.png');
+    }
+
+    create() {
+        // Add menu background if loaded
+        this.add.image(config.width / 2, config.height / 2, 'menu_background');
+
+        // Add game title text
+        this.add.text(config.width / 2, config.height / 4, 'My City Builder Game', {
+            fontSize: '48px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+
+        // Add 'New Game' button/text
+        const newGameButton = this.add.text(config.width / 2, config.height / 2, 'New Game', {
+            fontSize: '32px',
+            color: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive(); // Make the text interactive
+
+        // Add 'Continue' button/text (will be enabled later)
+        const continueButton = this.add.text(config.width / 2, config.height / 2 + 70, 'Continue', {
+            fontSize: '32px',
+            color: '#888888', // Greyed out initially
+            backgroundColor: '#333333',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5); // Not interactive yet
+
+        // --- Button Interaction ---
+        newGameButton.on('pointerdown', () => {
+            console.log("Starting New Game...");
+            // Start the main game scene
+            this.scene.start('GameScene'); // 'GameScene' is the key for your existing game scene
+        });
+
+        // You can add pointerover/pointerout effects for better UI feedback
+        newGameButton.on('pointerover', () => {
+            newGameButton.setColor('#ffff00'); // Highlight color
+        });
+
+        newGameButton.on('pointerout', () => {
+            newGameButton.setColor('#ffffff'); // Original color
+        });
+
+        // We'll add interaction for the 'Continue' button later
+    }
+}
+
+class GameScene extends Phaser.Scene {
+    constructor() {
+        super('GameScene');
+    }
+
+    preload() {
+        // --- Asset Loading ---
+        // Use: this.load.image(key, url);
+        // Texture Generation (Uses BUILDING_DATA)
+        this.load.image(BUILDING_DATA.HOUSE.textureKey, '../assets/house.png');
+        this.load.image(BUILDING_DATA.FACTORY.textureKey, '../assets/factory.svg');
+        this.load.image(BUILDING_DATA.PARK.textureKey, '../assets/park.svg');
+        this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, '../assets/Powerplant.png');
+        this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, '../assets/tower.svg');
+        // Load Audio: for sound effects or music
+        // Use: this.load.audio(key, urls); urls can be an array of different formats for browser compatibility
+        // this.load.audio('placeholder_sfx', ['assets/audio/collect.mp3', 'assets/audio/collect.ogg']);
+        // this.load.audio('placeholder_music', ['assets/audio/music.mp3', 'assets/audio/music.ogg']);
+        console.log("Preload function finished.");
+    }
+
+    create() {
+        console.log("Scene created!");
+
+        // --- Texture Generation (Uses BUILDING_DATA) ---
+        // Grass Texture (remains the same)
+        let grassTile = this.add.graphics();
+        grassTile.fillStyle(0x008000);
+        grassTile.fillRect(0, 0, tileSize, tileSize);
+        grassTile.lineStyle(1, 0x000000, 0.2);
+        grassTile.strokeRect(0, 0, tileSize, tileSize);
+        grassTile.generateTexture('grass', tileSize, tileSize);
+        grassTile.destroy();
+
+        // --- Object Pooling Setup ---
+        // Create pools for each building type
+        this.buildingPools = {}; // Object to hold pools for different building types
+
+        for (const buildingKey in BUILDING_DATA) {
+            this.buildingPools[buildingKey] = this.add.group({
+                maxSize: -1, // -1 means no limit, or set a number for a fixed size pool
+                runChildUpdate: false // No need to update pooled objects if they don't have update logic
+            });
+
+            for (let i = 0; i < 10; i++) { // Example: add 10 initial instances of each building type
+                const buildingImage = this.add.image(-100, -100, BUILDING_DATA[buildingKey].textureKey); // Position off-screen
+                buildingImage.setActive(false); // Deactivate it
+                buildingImage.setVisible(false); // Make it invisible
+                buildingImage.setDisplaySize(tileSize, tileSize); // Set display size when creating for the pool
+
+                this.buildingPools[buildingKey].add(buildingImage);
+            }
+            console.log(`Created pool for ${buildingKey} with ${this.buildingPools[buildingKey].getLength()} initial instances.`);
+        }
+
+
+
+        // --- Grid Initialization ---
+        for (let x = 0; x < gridWidth; x++) {
+            gridData[x] = [];
+            for (let y = 0; y < gridHeight; y++) {
+                gridData[x][y] = null; // null represents an empty tile
+            }
+        }
+
+        // --- Tilemap Creation ---
+        for (let x = 0; x < gridWidth; x++) {
+            for (let y = 0; y < gridHeight; y++) {
+                const grassTile = this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
+                // grassTile.setDisplaySize(tileSize, tileSize);
+                // grassTile.setDepth(0);
+            }
+        }
+
+        // --- HUD Elements ---
+        //this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
+        moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
+        unemploymentText = this.add.text(10, 35, `Unemployment: 0%`, { fontSize: '16px', color: '#ffffff' });
+        utilitiesText = this.add.text(10, 60, `Utilities: ${utilities}`, { fontSize: '16px', color: '#ffffff' });
+        pollutionText = this.add.text(10, 85, `Pollution: ${pollutionLevel}`, { fontSize: '16px', color: '#ffffff' });
+        happinessText = this.add.text(10, 110, `Happiness: ${happiness}`, { fontSize: '16px', color: '#ffffff' });
+
+        // --- Grid Click Handling ---
+        this.input.on('pointerdown', (pointer) => {
+
+            if (!selectedBuildingType) { // selectedBuildingType is now 'HOUSE' or 'FACTORY'
+                console.log("Please select a building type from the toolbar first.");
+                return;
+            }
+
+            const gridPos = getGridPosFromMouse(pointer);
+            const gridX = gridPos.x;
+            const gridY = gridPos.y;
+
+            if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) {
+                console.log("Cannot place building outside the grid.");
+                return;
+            }
+
+            if (gridData[gridX][gridY] === null) {
+                // Get data for the selected building type
+                const buildingInfo = BUILDING_DATA[selectedBuildingType];
+                const cost = buildingInfo.cost;
+
+                if (playerMoney >= cost) {
+                    // --- Get building from the pool ---
+                    const buildingImage = this.buildingPools[selectedBuildingType].get(
+                        gridX * tileSize + tileSize / 2,
+                        gridY * tileSize + tileSize / 2,
+                        buildingInfo.textureKey // Texture key is needed for the group's get method
+                    );
+
+                    if (buildingImage) { // Check if an object was successfully retrieved from the pool
+                        buildingImage.setDisplaySize(tileSize, tileSize); // Set display size when placing on the map
+                        buildingImage.setActive(true); // Activate it
+                        buildingImage.setVisible(true); // Make it visible
+                        buildingImage.setDepth(1); // Set a depth higher than the grass tiles (which have default depth 0)
+
+                        gridData[gridX][gridY] = {
+                            key: selectedBuildingType,
+                            image: buildingImage
+                        };
+                        playerMoney -= cost;
+                        moneyText.setText(`Money: $${playerMoney}`);
+                        console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
+                    } else {
+                        console.log(`Could not get a ${buildingInfo.displayName} from the pool.`);
+                        // This might happen if maxSize is set and the pool is full
+                    }
+
+
+                } else {
+                    console.log(`Cannot place ${buildingInfo.displayName}. Cost: $${cost}, Money: $${playerMoney}. Insufficient funds.`);
+                }
+
+
+            } else {
+                // Get the display name of the existing building
+                const existingBuildingKey = gridData[gridX][gridY];
+                const existingBuildingName = BUILDING_DATA[existingBuildingKey]?.displayName || 'Unknown Building'; // Use ?. for safety
+                console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied by ${existingBuildingName}.`);
+
+                //deselect a building
+                if (selectedBuildingType) {
+                    console.log("Deselecting building type.");
+                    selectedBuildingType = null;
+                }
+            }
+
+            // --- Time Progression Setup ---
+            // Create a timed event that repeats every 5 seconds (5000 milliseconds)
+            this.time.addEvent({
+                delay: 5000,                // milliseconds
+                callback: gameTick,         // function to call
+                callbackScope: this,        // scope for the callback
+                loop: true                  // repeat forever
+            });
+
+            console.log("Time progression started (tick every 5 seconds).");
+
+        });
+
+    }
+
+    update() {
+        // No changes needed here for now
+    }
+
+}
+
+
 const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    },
+    scene: [
+        MainMenuScene, // Add your new Main Menu scene first
+        GameScene // Add your existing game scene here
+    ],
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
@@ -20,9 +248,8 @@ const gridWidth = Math.round(config.width / tileSize);
 const gridHeight = Math.round(config.height / tileSize);
 console.log("Grid dimensions:", gridWidth, gridHeight);
 
-let gridData = []; // Τώρα θα περιέχει αντικείμενα { key: '...', image: Phaser.GameObjects.Image } ή null
+let gridData = [];
 let selectedBuildingType = null;
-//we create html menu. This button is not needed let selectedButtonBg = null; // so we track the selected button and can remove later
 
 // --- NEW: Consolidated Building Data ---
 const BUILDING_DATA = {
@@ -145,228 +372,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-function preload() {
-    // --- Asset Loading ---
-    // Use: this.load.image(key, url);
-    // Texture Generation (Uses BUILDING_DATA)
-    this.load.image(BUILDING_DATA.HOUSE.textureKey, '../assets/house.png');
-    this.load.image(BUILDING_DATA.FACTORY.textureKey, '../assets/factory.svg');
-    this.load.image(BUILDING_DATA.PARK.textureKey, '../assets/park.svg');
-    this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, '../assets/Powerplant.png');
-    this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, '../assets/tower.svg');
-    // Load Audio: for sound effects or music
-    // Use: this.load.audio(key, urls); urls can be an array of different formats for browser compatibility
-    // this.load.audio('placeholder_sfx', ['assets/audio/collect.mp3', 'assets/audio/collect.ogg']);
-    // this.load.audio('placeholder_music', ['assets/audio/music.mp3', 'assets/audio/music.ogg']);
-    console.log("Preload function finished.");
-}
-
-function create() {
-    console.log("Scene created!");
-
-    // --- Texture Generation (Uses BUILDING_DATA) ---
-    // Grass Texture (remains the same)
-     let grassTile = this.add.graphics();
-     grassTile.fillStyle(0x008000);
-     grassTile.fillRect(0, 0, tileSize, tileSize);
-     grassTile.lineStyle(1, 0x000000, 0.2);
-     grassTile.strokeRect(0, 0, tileSize, tileSize);
-     grassTile.generateTexture('grass', tileSize, tileSize);
-     grassTile.destroy(); 
-
-    // House Texture (Uses key from BUILDING_DATA)
-    /* let houseTile = this.add.graphics();
-    houseTile.fillStyle(0xADD8E6); // Light Blue
-    houseTile.fillRect(0, 0, tileSize, tileSize);
-    houseTile.lineStyle(1, 0x000000, 1);
-    houseTile.strokeRect(0, 0, tileSize, tileSize);
-    // Use textureKey from BUILDING_DATA
-    houseTile.generateTexture(BUILDING_DATA.HOUSE.textureKey, tileSize, tileSize);
-    houseTile.destroy(); */
-
-    // Factory Texture (Uses key from BUILDING_DATA)
-    /* let factoryTile = this.add.graphics();
-    factoryTile.fillStyle(0x808080); // Gray
-    factoryTile.fillRect(0, 0, tileSize, tileSize);
-    factoryTile.lineStyle(1, 0x000000, 1);
-    factoryTile.strokeRect(0, 0, tileSize, tileSize);
-    // Use textureKey from BUILDING_DATA
-    factoryTile.generateTexture(BUILDING_DATA.FACTORY.textureKey, tileSize, tileSize);
-    factoryTile.destroy(); */
-
-    //Utility Station Texture
-    /* let utilityStationTile = this.add.graphics();
-    utilityStationTile.fillStyle(0x808080); // Gray
-    utilityStationTile.fillRect(0, 0, tileSize, tileSize);
-    utilityStationTile.lineStyle(1, 0x000000, 1);
-    utilityStationTile.strokeRect(0, 0, tileSize, tileSize);
-    utilityStationTile.fillRect(tileSize * 0.7, -tileSize * 0.2, tileSize * 0.2, tileSize * 0.2);
-    // Use textureKey from BUILDING_DATA
-    utilityStationTile.generateTexture(BUILDING_DATA.UTILITIES_DIRTY.textureKey, tileSize, tileSize);
-    utilityStationTile.destroy(); */
-
-    //Clean utility station
-    /* let cleanStationTile = this.add.graphics();
-    cleanStationTile.fillStyle(0x8FCE00); // yellowish
-    cleanStationTile.fillRect(0, 0, tileSize, tileSize);
-    cleanStationTile.lineStyle(1, 0x000000, 1);
-    cleanStationTile.strokeRect(0, 0, tileSize, tileSize);
-    // Use textureKey from BUILDING_DATA
-    cleanStationTile.generateTexture(BUILDING_DATA.UTILITIES_CLEAN.textureKey, tileSize, tileSize);
-    cleanStationTile.destroy(); */
-
-    //Park Texture
-    /* let ParkTile = this.add.graphics();
-    ParkTile.fillStyle(0x6aa84f); // green
-    ParkTile.fillRect(0, 0, tileSize, tileSize);
-    ParkTile.lineStyle(1, 0x000000, 1);
-    ParkTile.strokeRect(0, 0, tileSize, tileSize);
-    // Use textureKey from BUILDING_DATA
-    ParkTile.generateTexture(BUILDING_DATA.PARK.textureKey, tileSize, tileSize);
-    ParkTile.destroy(); */
-
-    // --- Object Pooling Setup ---
-    // Create pools for each building type
-    this.buildingPools = {}; // Object to hold pools for different building types
-
-    for (const buildingKey in BUILDING_DATA) {
-        this.buildingPools[buildingKey] = this.add.group({
-            maxSize: -1, // -1 means no limit, or set a number for a fixed size pool
-            runChildUpdate: false // No need to update pooled objects if they don't have update logic
-        });
-        // You might want to adjust the number based on how many buildings you expect
-        for (let i = 0; i < 10; i++) { // Example: add 10 initial instances of each building type
-            const buildingImage = this.add.image(-100, -100, BUILDING_DATA[buildingKey].textureKey); // Position off-screen
-            buildingImage.setActive(false); // Deactivate it
-            buildingImage.setVisible(false); // Make it invisible
-            buildingImage.setDisplaySize(tileSize, tileSize); // Set display size when creating for the pool
-
-            this.buildingPools[buildingKey].add(buildingImage);
-        }
-        console.log(`Created pool for ${buildingKey} with ${this.buildingPools[buildingKey].getLength()} initial instances.`);
-    }
-
-
-
-    // --- Grid Initialization ---
-    for (let x = 0; x < gridWidth; x++) {
-        gridData[x] = [];
-        for (let y = 0; y < gridHeight; y++) {
-            gridData[x][y] = null; // null represents an empty tile
-        }
-    }
-
-    // --- Tilemap Creation ---
-    for (let x = 0; x < gridWidth; x++) {
-        for (let y = 0; y < gridHeight; y++) {
-            const grassTile = this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, 'grass');
-           // grassTile.setDisplaySize(tileSize, tileSize);
-           // grassTile.setDepth(0);
-        }
-    }
-
-    // --- HUD Elements ---
-    //this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
-    moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
-    unemploymentText = this.add.text(10, 35, `Unemployment: 0%`, { fontSize: '16px', color: '#ffffff' });
-    utilitiesText = this.add.text(10, 60, `Utilities: ${utilities}`, { fontSize: '16px', color: '#ffffff' });
-    pollutionText = this.add.text(10, 85, `Pollution: ${pollutionLevel}`, { fontSize: '16px', color: '#ffffff' });
-    happinessText = this.add.text(10, 110, `Happiness: ${happiness}`, { fontSize: '16px', color: '#ffffff' });
-
-    // --- Grid Click Handling ---
-    this.input.on('pointerdown', (pointer) => {
-
-        if (!selectedBuildingType) { // selectedBuildingType is now 'HOUSE' or 'FACTORY'
-            console.log("Please select a building type from the toolbar first.");
-            return;
-        }
-
-        const gridPos = getGridPosFromMouse(pointer);
-        const gridX = gridPos.x;
-        const gridY = gridPos.y;
-
-        if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) {
-            console.log("Cannot place building outside the grid.");
-            return;
-        }
-
-        if (gridData[gridX][gridY] === null) {
-            // Get data for the selected building type
-            const buildingInfo = BUILDING_DATA[selectedBuildingType];
-            const cost = buildingInfo.cost;
-
-            if (playerMoney >= cost) {
-                // --- Get building from the pool ---
-                const buildingImage = this.buildingPools[selectedBuildingType].get(
-                    gridX * tileSize + tileSize / 2,
-                    gridY * tileSize + tileSize / 2,
-                    buildingInfo.textureKey // Texture key is needed for the group's get method
-                );
-
-                if (buildingImage) { // Check if an object was successfully retrieved from the pool
-                    buildingImage.setDisplaySize(tileSize, tileSize); // Set display size when placing on the map
-                    buildingImage.setActive(true); // Activate it
-                    buildingImage.setVisible(true); // Make it visible
-                    buildingImage.setDepth(1); // Set a depth higher than the grass tiles (which have default depth 0)
-
-                    gridData[gridX][gridY] = {
-                        key: selectedBuildingType,
-                        image: buildingImage
-                    };
-                    playerMoney -= cost;
-                    moneyText.setText(`Money: $${playerMoney}`);
-                    console.log(`${buildingInfo.displayName} placed at grid x: ${gridX}, y: ${gridY}. Cost: $${cost}. Remaining money: $${playerMoney}`);
-                } else {
-                    console.log(`Could not get a ${buildingInfo.displayName} from the pool.`);
-                    // This might happen if maxSize is set and the pool is full
-                }
-
-
-            } else {
-                console.log(`Cannot place ${buildingInfo.displayName}. Cost: $${cost}, Money: $${playerMoney}. Insufficient funds.`);
-            }
-
-
-        } else {
-            // Get the display name of the existing building
-            const existingBuildingKey = gridData[gridX][gridY];
-            const existingBuildingName = BUILDING_DATA[existingBuildingKey]?.displayName || 'Unknown Building'; // Use ?. for safety
-            console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied by ${existingBuildingName}.`);
-
-            //deselect a building
-            if (selectedBuildingType) {
-                console.log("Deselecting building type.");
-                selectedBuildingType = null;
-            }
-        }
-
-        // --- Time Progression Setup ---
-        // Create a timed event that repeats every 5 seconds (5000 milliseconds)
-        this.time.addEvent({
-            delay: 5000,                // milliseconds
-            callback: gameTick,         // function to call
-            callbackScope: this,        // scope for the callback
-            loop: true                  // repeat forever
-        });
-
-        console.log("Time progression started (tick every 5 seconds).");
-
-    });
-
-}
-
-function update() {
-    // No changes needed here for now
-}
-
+// --- Functions ---
 function getGridPosFromMouse(pointer) {
     const x = Math.floor(pointer.x / tileSize);
     const y = Math.floor(pointer.y / tileSize);
     return { x, y };
 }
 
-// --- Functions ---
 function gameTick() {
     tickCounter++;
     //console.log(`Game Tick ${tickCounter}`);
