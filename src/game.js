@@ -7,7 +7,7 @@ class MainMenuScene extends Phaser.Scene {
     preload() {
         // Load any assets specific to the Main Menu here
         // e.g., background image, button textures
-        this.load.image('menu_background', '../assets/background.png');
+        this.load.image('menu_background', '../assets/background.avif');
     }
 
     create() {
@@ -65,11 +65,11 @@ class GameScene extends Phaser.Scene {
         // --- Asset Loading ---
         // Use: this.load.image(key, url);
         // Texture Generation (Uses BUILDING_DATA)
-        this.load.image(BUILDING_DATA.HOUSE.textureKey, '../assets/house.png');
-        this.load.image(BUILDING_DATA.FACTORY.textureKey, '../assets/factory.svg');
-        this.load.image(BUILDING_DATA.PARK.textureKey, '../assets/park.svg');
-        this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, '../assets/Powerplant.png');
-        this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, '../assets/tower.svg');
+        this.load.image(BUILDING_DATA.HOUSE.textureKey, '../assets/house1.avif');
+        this.load.image(BUILDING_DATA.FACTORY.textureKey, '../assets/factory.avif');
+        this.load.image(BUILDING_DATA.PARK.textureKey, '../assets/park.avif');
+        this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, '../assets/powerplant.avif');
+        this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, '../assets/tower.avif');
         // Load Audio: for sound effects or music
         // Use: this.load.audio(key, urls); urls can be an array of different formats for browser compatibility
         // this.load.audio('placeholder_sfx', ['assets/audio/collect.mp3', 'assets/audio/collect.ogg']);
@@ -469,22 +469,6 @@ function recalculateStats() {
     // Ενημέρωση HUD (εκτός ανεργίας που έχει τη δική της συνάρτηση)
     utilitiesText.setText(`Utilities: ${utilities}`);
     pollutionText.setText(`Pollution: ${pollutionLevel}`);
-    /* 
-        // --- Έλεγχος Utilities ---
-        const initialUtilities = gridWidth * gridHeight; // Η αρχική "χωρητικότητα"
-        const lowThreshold = initialUtilities * 0.25;
-        const criticalThreshold = initialUtilities * 0.15;
-    
-        if (utilities < lowThreshold) {
-            utilitiesText.setColor('#ff0000'); // Κόκκινο χρώμα
-            if (utilities < criticalThreshold && !lowUtilityAlertTriggered) {
-                alert("CRITICAL ALERT: Utility levels are critically low!");
-                lowUtilityAlertTriggered = true; // Σήμανση ότι το alert εμφανίστηκε
-            }
-        } else {
-            utilitiesText.setColor('#ffffff'); // Επαναφορά σε λευκό
-            lowUtilityAlertTriggered = false; // Επαναφορά σημαίας alert
-        } */
 
     // --- Υπολογισμός & Ενημέρωση Ευτυχίας ---
     let unemploymentRate = (totalPopulation > 0) ? Math.max(0, (totalPopulation - totalJobs) / totalPopulation) * 100 : 0;
@@ -499,16 +483,6 @@ function recalculateStats() {
 
 // --- Νέα Συνάρτηση για Έλεγχο Events Ρύπανσης ---
 function checkEvents(currentPollution, utilities, happiness) {
-    /*  // Ελέγχουμε τα όρια 25, 50, 75
-     [25, 50, 75].forEach(threshold => {
-         if (currentPollution >= threshold && !pollutionAlertsTriggered[threshold]) {
-             alert(`WARNING: Pollution level reached ${threshold}!`);
-             pollutionAlertsTriggered[threshold] = true;
-         } else if (currentPollution < threshold) {
-             pollutionAlertsTriggered[threshold] = false; // Επαναφορά αν πέσει κάτω από το όριο
-         }
-     }); */
-
     // Pollution event
     //const pollutionDestructionThreshold = 75;
     if (currentPollution > 75 && !highPollutionDestructionTriggered) {
