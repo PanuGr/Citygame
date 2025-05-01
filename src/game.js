@@ -638,7 +638,7 @@ function getGridPosFromMouse(pointer) {
 function gameTick() {
     tickCounter++;
     //console.log(`Game Tick ${tickCounter}`);
-    recalculateStats();
+    recalculateStats(this);
     updateUnemploymentDisplay();
 }
 
@@ -658,7 +658,7 @@ let lowUtilityAlertTriggered = false;
 let lowHappinessAlertTriggered = false;
 let highPollutionDestructionTriggered = false;
 
-function recalculateStats() {
+function recalculateStats(scene) {
     let currentTotalPopulation = 0;
     let currentTotalJobs = 0;
     let currentUtilitiesSupply = gridWidth * gridHeight; // Base utility supply
@@ -734,16 +734,16 @@ function recalculateStats() {
     happinessText.setText(`Happiness: ${happiness.toFixed(0)}%`); // Χωρίς δεκαδικά
 
     // --- Έλεγχος Events ---
-    checkEvents(pollutionLevel, utilities, happiness);
+    checkEvents(pollutionLevel, utilities, happiness, scene);
 }
 
 // --- Νέα Συνάρτηση για Έλεγχο Events Ρύπανσης ---
-function checkEvents(currentPollution, utilities, happiness) {
+function checkEvents(currentPollution, utilities, happiness, scene) {
     // Pollution event
     //const pollutionDestructionThreshold = 75;
     if (currentPollution > 75 && !highPollutionDestructionTriggered) {
         alert("WARNING: High pollution is causing buildings to be abandoned!");
-        destroyRandomBuildings(30); // Κατέστρεψε % κτίρια
+        destroyRandomBuildings(30, null, scene); // Κατέστρεψε % κτίρια
         // --- για να μην ξανασυμβεί αμέσως ---
         highPollutionDestructionTriggered = true;
     }
@@ -752,7 +752,7 @@ function checkEvents(currentPollution, utilities, happiness) {
     //const utilitiesDestructionThreshold = 25;
     if (utilities < 25 && !lowUtilityAlertTriggered) {
         alert("WARNING: Low utilities is causing buildings to be abandoned!");
-        destroyRandomBuildings(50, 'FACTORY'); // Κατέστρεψε % κτίρια
+        destroyRandomBuildings(50, 'FACTORY', scene); // Κατέστρεψε % κτίρια
         // --- για να μην ξανασυμβεί αμέσως ---
         lowUtilityAlertTriggered = true;
     }
@@ -761,14 +761,14 @@ function checkEvents(currentPollution, utilities, happiness) {
     //const happinessDestructionThreshold = 25;
     if (happiness < 25 && !lowHappinessAlertTriggered) {
         alert("WARNING: Low happiness is causing buildings to be abandoned!");
-        destroyRandomBuildings(50, 'HOUSE'); // Κατέστρεψε % κτίρια
+        destroyRandomBuildings(50, 'HOUSE',scene); // Κατέστρεψε % κτίρια
         // --- για να μην ξανασυμβεί αμέσως ---
         lowHappinessAlertTriggered = true;
     }
 }
 
 // ---  Συνάρτηση για Καταστροφή Κτιρίων ---
-function destroyRandomBuildings(percentage, targetBuildingKey = null) {
+function destroyRandomBuildings(percentage, targetBuildingKey = null, scene) {
     let potentialTargets = [];
     for (let x = 0; x < gridWidth; x++) {
         for (let y = 0; y < gridHeight; y++) {
@@ -791,7 +791,7 @@ function destroyRandomBuildings(percentage, targetBuildingKey = null) {
         const buildingData = gridData[x][y];
         if (buildingData && buildingData.image) {
             console.log(`Destroying building due to pollution.`);
-            this.buildingPools[buildingData.key].killAndHide(buildingData.image); // Use killAndHide to deactivate and hide. Return building to the pool.
+            scene.buildingPools[buildingData.key].killAndHide(buildingData.image); // Use killAndHide to deactivate and hide. Return building to the pool.
             gridData[x][y] = null; // Εκκαθάριση του κελιού στο gridData
         }
 
