@@ -15,7 +15,7 @@ class MainMenuScene extends Phaser.Scene {
         this.add.image(config.width / 2, config.height / 2, 'menu_background');
 
         // Add game title text
-        this.add.text(config.width / 2, config.height / 4, 'My City Builder Game', {
+        this.add.text(config.width / 2, config.height / 4, 'Be the Mayor', {
             fontSize: '48px',
             color: '#ffffff'
         }).setOrigin(0.5);
