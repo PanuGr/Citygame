@@ -29,18 +29,39 @@ class MainMenuScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive(); // Make the text interactive
 
         // Add 'Continue' button/text (will be enabled later)
+        const saveExists = localStorage.getItem('cityBuilderSave') !== null;
         const continueButton = this.add.text(config.width / 2, config.height / 2 + 70, 'Continue', {
             fontSize: '32px',
-            color: '#888888', // Greyed out initially
+            color: saveExists ? '#ffffff' : '#888888', // Enabled if save exists
             backgroundColor: '#333333',
             padding: { x: 20, y: 10 }
         }).setOrigin(0.5); // Not interactive yet
+
+        // Make continue button interactive only if save exists
+        if (saveExists) {
+            continueButton.setInteractive();
+
+            // Add hover effects for continue button
+            continueButton.on('pointerover', () => {
+                continueButton.setColor('#ffff00'); // Highlight color
+            });
+
+            continueButton.on('pointerout', () => {
+                continueButton.setColor('#ffffff'); // Original color
+            });
+
+            // Add click handler for continue button
+            continueButton.on('pointerdown', () => {
+                console.log("Loading saved game...");
+                this.scene.start('GameScene', { loadSave: true });
+            });
+        }
 
         // --- Button Interaction ---
         newGameButton.on('pointerdown', () => {
             console.log("Starting New Game...");
             // Start the main game scene
-            this.scene.start('GameScene'); // 'GameScene' is the key for your existing game scene
+            this.scene.start('GameScene', { loadSave: false });
         });
 
         // You can add pointerover/pointerout effects for better UI feedback
@@ -52,13 +73,17 @@ class MainMenuScene extends Phaser.Scene {
             newGameButton.setColor('#ffffff'); // Original color
         });
 
-        // We'll add interaction for the 'Continue' button later
     }
 }
 
 class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
+    }
+
+    init(data) {
+        // Check if we should load a saved game
+        this.loadSavedGame = data.loadSave === true;
     }
 
     preload() {
@@ -111,8 +136,6 @@ class GameScene extends Phaser.Scene {
             console.log(`Created pool for ${buildingKey} with ${this.buildingPools[buildingKey].getLength()} initial instances.`);
         }
 
-
-
         // --- Grid Initialization ---
         for (let x = 0; x < gridWidth; x++) {
             gridData[x] = [];
@@ -130,6 +153,11 @@ class GameScene extends Phaser.Scene {
             }
         }
 
+        // --- Load saved game if needed ---
+        if (this.loadSavedGame) {
+            this.loadFromSave();
+        }
+
         // --- HUD Elements ---
         //this.add.rectangle(5, 5, 150, 30, 0x000000, 0.5).setOrigin(0);
         moneyText = this.add.text(10, 10, `Money: $${playerMoney}`, { fontSize: '16px', color: '#ffffff' });
@@ -140,7 +168,6 @@ class GameScene extends Phaser.Scene {
 
         // --- Grid Click Handling ---
         this.input.on('pointerdown', (pointer) => {
-
             if (!selectedBuildingType) { // selectedBuildingType is now 'HOUSE' or 'FACTORY'
                 console.log("Please select a building type from the toolbar first.");
                 return;
@@ -185,16 +212,12 @@ class GameScene extends Phaser.Scene {
                         console.log(`Could not get a ${buildingInfo.displayName} from the pool.`);
                         // This might happen if maxSize is set and the pool is full
                     }
-
-
                 } else {
                     console.log(`Cannot place ${buildingInfo.displayName}. Cost: $${cost}, Money: $${playerMoney}. Insufficient funds.`);
                 }
-
-
             } else {
                 // Get the display name of the existing building
-                const existingBuildingKey = gridData[gridX][gridY];
+                const existingBuildingKey = gridData[gridX][gridY].key;
                 const existingBuildingName = BUILDING_DATA[existingBuildingKey]?.displayName || 'Unknown Building'; // Use ?. for safety
                 console.log(`Cannot place building here. Cell x: ${gridX}, y: ${gridY} is occupied by ${existingBuildingName}.`);
 
@@ -204,27 +227,218 @@ class GameScene extends Phaser.Scene {
                     selectedBuildingType = null;
                 }
             }
-
-            // --- Time Progression Setup ---
-            // Create a timed event that repeats every 5 seconds (5000 milliseconds)
-            this.time.addEvent({
-                delay: 5000,                // milliseconds
-                callback: gameTick,         // function to call
-                callbackScope: this,        // scope for the callback
-                loop: true                  // repeat forever
-            });
-
-            console.log("Time progression started (tick every 5 seconds).");
-
         });
 
+        // --- Time Progression Setup ---
+        // Create a timed event that repeats every 5 seconds (5000 milliseconds)
+        this.timeEvent = this.time.addEvent({
+            delay: 5000,                // milliseconds
+            callback: () => { gameTick.call(this); }, // Use function with correct 'this' context
+            callbackScope: this,        // scope for the callback
+            loop: true                  // repeat forever
+        });
+/* 
+the game can be saved from the button on the menu
+        // Add a save button to the scene
+        const saveGameButton = this.add.text(config.width - 100, config.height - 50, 'Save Game', {
+            fontSize: '18px',
+            color: '#ffffff',
+            backgroundColor: '#333333',
+            padding: { x: 10, y: 5 }
+        }).setOrigin(0.5).setInteractive();
+
+        // Save button interactions
+        saveGameButton.on('pointerover', () => {
+            saveGameButton.setColor('#ffff00');
+        });
+
+        saveGameButton.on('pointerout', () => {
+            saveGameButton.setColor('#ffffff');
+        });
+
+        saveGameButton.on('pointerdown', () => {
+            this.saveGameState();
+        });
+ */
+        console.log("Time progression started (tick every 5 seconds).");
+    }
+
+    // Function to save the current game state
+    saveGameState() {
+        // Gather all the important game state variables
+        const gameState = {
+            playerMoney: playerMoney,
+            gridData: gridData.map(row =>
+                row.map(cell => {
+                    if (cell && cell.key) {
+                        return { key: cell.key }; // Save only the building key
+                    }
+                    return null; // Cell is empty
+                })
+            ),
+            totalPopulation: totalPopulation,
+            totalJobs: totalJobs,
+            utilities: utilities,
+            pollutionLevel: pollutionLevel,
+            happiness: happiness,
+            tickCounter: tickCounter
+        };
+
+        try {
+            // Convert the game state object to a JSON string
+            const saveString = JSON.stringify(gameState);
+
+            // Save the string to Local Storage
+            localStorage.setItem('cityBuilderSave', saveString);
+            
+            // Visual feedback for save
+            const saveNotice = this.add.text(config.width / 2, config.height / 2, 'Game Saved!', {
+                fontSize: '32px',
+                color: '#ffffff',
+                backgroundColor: '#008800',
+                padding: { x: 20, y: 10 }
+            }).setOrigin(0.5);
+            
+            // Make the notice fade out after 2 seconds
+            this.tweens.add({
+                targets: saveNotice,
+                alpha: 0,
+                duration: 2000,
+                ease: 'Power2',
+                onComplete: () => {
+                    saveNotice.destroy();
+                }
+            });
+            
+            console.log("Game saved successfully!");
+
+        } catch (e) {
+            console.error("Could not save game:", e);
+            
+            // Error feedback
+            const errorNotice = this.add.text(config.width / 2, config.height / 2, 'Save Failed!', {
+                fontSize: '32px',
+                color: '#ffffff',
+                backgroundColor: '#880000',
+                padding: { x: 20, y: 10 }
+            }).setOrigin(0.5);
+            
+            // Make the notice fade out after 2 seconds
+            this.tweens.add({
+                targets: errorNotice,
+                alpha: 0,
+                duration: 2000,
+                ease: 'Power2',
+                onComplete: () => {
+                    errorNotice.destroy();
+                }
+            });
+        }
+    }
+
+    // Function to load a saved game
+    loadFromSave() {
+        try {
+            // Get the saved string from Local Storage
+            const saveString = localStorage.getItem('cityBuilderSave');
+
+            if (saveString) {
+                // Parse the JSON string back into an object
+                const gameState = JSON.parse(saveString);
+                
+                // Restore game state
+                playerMoney = gameState.playerMoney;
+                totalPopulation = gameState.totalPopulation;
+                totalJobs = gameState.totalJobs;
+                utilities = gameState.utilities;
+                pollutionLevel = gameState.pollutionLevel;
+                happiness = gameState.happiness;
+                tickCounter = gameState.tickCounter;
+                
+                // Restore grid data and recreate buildings
+                for (let x = 0; x < gridWidth; x++) {
+                    for (let y = 0; y < gridHeight; y++) {
+                        const cellData = gameState.gridData[x][y];
+                        
+                        if (cellData && cellData.key) {
+                            const buildingKey = cellData.key;
+                            const buildingInfo = BUILDING_DATA[buildingKey];
+                            
+                            // Get a building from the appropriate pool
+                            const buildingImage = this.buildingPools[buildingKey].get(
+                                x * tileSize + tileSize / 2,
+                                y * tileSize + tileSize / 2,
+                                buildingInfo.textureKey
+                            );
+                            
+                            if (buildingImage) {
+                                buildingImage.setDisplaySize(tileSize, tileSize);
+                                buildingImage.setActive(true);
+                                buildingImage.setVisible(true);
+                                buildingImage.setDepth(1);
+                                
+                                // Update the grid data with the building
+                                gridData[x][y] = {
+                                    key: buildingKey,
+                                    image: buildingImage
+                                };
+                            }
+                        }
+                    }
+                }
+                
+                // Visual feedback for successful load
+                const loadNotice = this.add.text(config.width / 2, config.height / 2, 'Game Loaded!', {
+                    fontSize: '32px',
+                    color: '#ffffff',
+                    backgroundColor: '#008800',
+                    padding: { x: 20, y: 10 }
+                }).setOrigin(0.5);
+                
+                // Make the notice fade out after 2 seconds
+                this.tweens.add({
+                    targets: loadNotice,
+                    alpha: 0,
+                    duration: 2000,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        loadNotice.destroy();
+                    }
+                });
+                
+                console.log("Game loaded successfully!");
+            } else {
+                console.log("No saved game found.");
+            }
+        } catch (e) {
+            console.error("Could not load game:", e);
+            
+            // Error feedback
+            const errorNotice = this.add.text(config.width / 2, config.height / 2, 'Load Failed!', {
+                fontSize: '32px',
+                color: '#ffffff',
+                backgroundColor: '#880000',
+                padding: { x: 20, y: 10 }
+            }).setOrigin(0.5);
+            
+            // Make the notice fade out after 2 seconds
+            this.tweens.add({
+                targets: errorNotice,
+                alpha: 0,
+                duration: 2000,
+                ease: 'Power2',
+                onComplete: () => {
+                    errorNotice.destroy();
+                }
+            });
+        }
     }
 
     update() {
         // No changes needed here for now
     }
-
 }
+
 
 
 const config = {
@@ -251,7 +465,7 @@ console.log("Grid dimensions:", gridWidth, gridHeight);
 let gridData = [];
 let selectedBuildingType = null;
 
-// --- NEW: Consolidated Building Data ---
+// --- Consolidated Building Data ---
 const BUILDING_DATA = {
     HOUSE: {
         textureKey: 'building_house', // Unique texture key
@@ -369,6 +583,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectElement = document.getElementById('building-select');
     if (selectElement) {
         selectElement.addEventListener('change', handleBuildingSelectionChange);
+    }
+    // Add event listeners for the save/load/delete buttons from saveFunctions.js
+    const saveButton = document.querySelector('button[type="submit"]');
+    const deleteSaveButton = document.querySelector('button[type="reset"]');
+    
+    if (saveButton) {
+        saveButton.addEventListener('click', () => {
+            const currentGameScene = game.scene.getScene('GameScene');
+            if (currentGameScene && currentGameScene.scene.isActive()) {
+                currentGameScene.saveGameState();
+            } else {
+                console.warn("Cannot save: GameScene is not active.");
+            }
+        });
+    }
+    
+    if (deleteSaveButton) {
+        deleteSaveButton.addEventListener('click', () => {
+            localStorage.removeItem('cityBuilderSave');
+            console.log("Save data cleared.");
+            alert("Save data cleared.");
+            /* 
+            // Provide visual feedback
+            const notice = document.createElement('div');
+            notice.textContent = 'Save data cleared';
+            notice.style.position = 'fixed';
+            notice.style.top = '50%';
+            notice.style.left = '50%';
+            notice.style.transform = 'translate(-50%, -50%)';
+            notice.style.backgroundColor = '#880000';
+            notice.style.color = 'white';
+            notice.style.padding = '10px 20px';
+            notice.style.borderRadius = '5px';
+            notice.style.zIndex = '1000';
+            
+            document.body.appendChild(notice);
+            
+            setTimeout(() => {
+                document.body.removeChild(notice);
+            }, 2000);
+             */
+        });
     }
 });
 
@@ -547,3 +803,4 @@ function destroyRandomBuildings(percentage, targetBuildingKey = null) {
     recalculateStats();
     updateUnemploymentDisplay(); // Και η ανεργία μπορεί να άλλαξε
 }
+
