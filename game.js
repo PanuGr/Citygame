@@ -7,7 +7,7 @@ class MainMenuScene extends Phaser.Scene {
     preload() {
         // Load any assets specific to the Main Menu here
         // e.g., background image, button textures
-        this.load.image('menu_background', '../assets/background.avif');
+        this.load.image('menu_background', './assets/background.avif');
     }
 
     create() {
@@ -90,11 +90,11 @@ class GameScene extends Phaser.Scene {
         // --- Asset Loading ---
         // Use: this.load.image(key, url);
         // Texture Generation (Uses BUILDING_DATA)
-        this.load.image(BUILDING_DATA.HOUSE.textureKey, '../assets/house1.avif');
-        this.load.image(BUILDING_DATA.FACTORY.textureKey, '../assets/factory.avif');
-        this.load.image(BUILDING_DATA.PARK.textureKey, '../assets/park.avif');
-        this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, '../assets/powerplant.avif');
-        this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, '../assets/tower.avif');
+        this.load.image(BUILDING_DATA.HOUSE.textureKey, './assets/house1.avif');
+        this.load.image(BUILDING_DATA.FACTORY.textureKey, './assets/factory.avif');
+        this.load.image(BUILDING_DATA.PARK.textureKey, './assets/park.avif');
+        this.load.image(BUILDING_DATA.UTILITIES_DIRTY.textureKey, './assets/powerplant.avif');
+        this.load.image(BUILDING_DATA.UTILITIES_CLEAN.textureKey, './assets/tower.avif');
         // Load Audio: for sound effects or music
         // Use: this.load.audio(key, urls); urls can be an array of different formats for browser compatibility
         // this.load.audio('placeholder_sfx', ['assets/audio/collect.mp3', 'assets/audio/collect.ogg']);
