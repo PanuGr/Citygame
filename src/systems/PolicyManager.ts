@@ -1,10 +1,11 @@
 import { GameState } from '../core/GameState';
 import { PolicySettings, EVENTS } from '../core/Constants';
+import { POLICY_DATA } from '../core/policy';
 import { EventBus } from '../core/EventBus';
 
 export class PolicyManager {
   public static setTaxRate(rate: number): void {
-    const clamped = Math.max(0, Math.min(25, rate));
+    const clamped = Math.max(0, Math.min(100, rate));
     GameState.policies.taxRate = clamped;
     PolicyManager.recalculateFactionImpact();
     EventBus.emit(EVENTS.POLICY_CHANGED, GameState.policies);
@@ -20,42 +21,29 @@ export class PolicyManager {
 
   public static getMonthlyPolicyUpkeep(): number {
     let cost = 0;
-    if (GameState.policies.greenEnergyMandate) cost += 50;
-    if (GameState.policies.industrialSubsidies) cost += 60;
-    if (GameState.policies.publicTransitFunding) cost += 40;
-    return cost;
+    const treasury = GameState.money;
+    if (GameState.policies.greenEnergyMandate) {
+      cost += Math.abs(POLICY_DATA.GREEN_ENERGY_MANDATE.effects.upkeepPctOfTreasury || 0.02) * 500;
+    }
+    if (GameState.policies.industrialSubsidies) {
+      cost += 30;
+    }
+    if (GameState.policies.publicTransitFunding) {
+      cost += Math.abs(POLICY_DATA.PUBLIC_TRANSIT_FUNDING.effects.upkeepPctOfTreasury || 0.015) * 500;
+    }
+    return Math.round(cost);
   }
 
   public static applyMonthlyPolicyEffects(): void {
     const p = GameState.policies;
+    const taxEffects = POLICY_DATA.TAX_RATE.effects;
 
-    // Faction shifts per month based on policies
-    // Tax impact: default 10%. Higher tax hurts residents & tycoons, lower tax helps them.
-    const taxDiff = p.taxRate - 10;
-    if (taxDiff > 0) {
-      GameState.updateFaction('residents', -taxDiff * 0.5);
-      GameState.updateFaction('tycoon', -taxDiff * 0.5);
-    } else if (taxDiff < 0) {
-      GameState.updateFaction('residents', -taxDiff * 0.4);
-      GameState.updateFaction('tycoon', -taxDiff * 0.4);
-    }
+    // Tax rate direct impact on residents approval and treasury
+    const taxSteps = p.taxRate / (POLICY_DATA.TAX_RATE.step || 10);
+    const taxApprovalHit = taxSteps * (taxEffects.approvalPerStep || -2);
+    GameState.updateFaction('residents', taxApprovalHit);
 
-    if (p.greenEnergyMandate) {
-      GameState.updateFaction('env', 2);
-      GameState.updateFaction('tycoon', -1);
-    }
-
-    if (p.industrialSubsidies) {
-      GameState.updateFaction('tycoon', 3);
-      GameState.updateFaction('env', -2);
-      GameState.updateFaction('labor', 1);
-    }
-
-    if (p.publicTransitFunding) {
-      GameState.updateFaction('labor', 2);
-      GameState.updateFaction('residents', 2);
-      GameState.updateFaction('env', 1);
-    }
+    // Other policies affect stats via EconomyManager, but we can nudge approval or apply indirect effects here if needed
   }
 
   public static recalculateFactionImpact(): void {

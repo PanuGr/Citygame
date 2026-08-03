@@ -1,5 +1,4 @@
 import { GameState } from '../core/GameState';
-import { GAME_CONFIG } from '../core/Constants';
 
 export interface SavePayload {
   version: number;
@@ -8,7 +7,6 @@ export interface SavePayload {
   year: number;
   policies: typeof GameState.policies;
   factionApproval: typeof GameState.factionApproval;
-  gridData: (string | null)[][];
 }
 
 export class SaveManager {
@@ -21,13 +19,12 @@ export class SaveManager {
   public static saveGame(): boolean {
     try {
       const payload: SavePayload = {
-        version: 2,
+        version: 3,
         money: GameState.money,
         month: GameState.month,
         year: GameState.year,
         policies: { ...GameState.policies },
         factionApproval: { ...GameState.factionApproval },
-        gridData: GameState.gridData.map(col => [...col]),
       };
 
       localStorage.setItem(SaveManager.SAVE_KEY, JSON.stringify(payload));
@@ -45,42 +42,19 @@ export class SaveManager {
 
       const data = JSON.parse(raw);
 
-      // Backwards compatibility handling
-      if (data.gridData) {
-        GameState.money = typeof data.money === 'number' ? data.money : (data.playerMoney ?? 1000);
-        GameState.month = data.month ?? 1;
-        GameState.year = data.year ?? 1;
+      GameState.money = typeof data.money === 'number' ? data.money : 500;
+      GameState.month = data.month ?? 1;
+      GameState.year = data.year ?? 1;
 
-        if (data.policies) {
-          GameState.policies = { ...GameState.policies, ...data.policies };
-        }
-        if (data.factionApproval) {
-          GameState.factionApproval = { ...GameState.factionApproval, ...data.factionApproval };
-        }
-
-        // Restore grid safely matching current dimensions
-        GameState.initGrid();
-        const savedGrid = data.gridData;
-
-        for (let x = 0; x < GAME_CONFIG.GRID_WIDTH; x++) {
-          if (!savedGrid[x]) continue;
-          for (let y = 0; y < GAME_CONFIG.GRID_HEIGHT; y++) {
-            const cell = savedGrid[x][y];
-            if (!cell) {
-              GameState.gridData[x][y] = null;
-            } else if (typeof cell === 'string') {
-              GameState.gridData[x][y] = cell;
-            } else if (cell && typeof cell === 'object' && cell.key) {
-              // Legacy object format: { key: 'HOUSE' }
-              GameState.gridData[x][y] = cell.key;
-            }
-          }
-        }
-
-        GameState.emitChange();
-        return true;
+      if (data.policies) {
+        GameState.policies = { ...GameState.policies, ...data.policies };
       }
-      return false;
+      if (data.factionApproval) {
+        GameState.factionApproval = { ...GameState.factionApproval, ...data.factionApproval };
+      }
+
+      GameState.emitChange();
+      return true;
     } catch (e) {
       console.error('Failed to load save data:', e);
       return false;

@@ -16,7 +16,7 @@ than adding one — and most of the Democracy-style engine already exists.
 ## Core Loop
 
 - **Turn-based**, not real-time. 1 turn = 1 month. Player advances manually
-  ("Next Month" button). No timer, no pause/speed controls needed.
+  ("Next Month" button). Real-time tick interval is removed completely.
 - Each turn:
   1. Player may adjust policies (already in `PolicyManager`: tax rate,
      green energy mandate, industrial subsidies, public transit funding)
@@ -25,12 +25,11 @@ than adding one — and most of the Democracy-style engine already exists.
      economy recalculation → new state: approval, budget, pollution,
      population).
   3. City visual re-renders based on new state — more/bigger buildings as
-     population grows, smog overlay as pollution rises.
+     population grows, procedural offset within grid cells, and a simple
+     tint/overlay representing pollution levels.
 - **Campaign length**: fixed 12 turns (1 year) — already modeled via
   `MONTH_NAMES` / month-year state — then `GameOver` summary screen.
-- **No fail state in v1.** Sandbox/score-only. Fail state is a later
-  feature, added only after policy/stat math is balanced through
-  playtesting.
+- **Fail state**: population reaches 0 triggers game over. Sandbox/score-only otherwise.
 
 ---
 
