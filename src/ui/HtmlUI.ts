@@ -459,6 +459,18 @@ export class HtmlUI {
     this.eventModalElement.innerHTML = `
       <div class="modal-content event-card">
         <div id="event-title" class="modal-header">Chemical Spill</div>
+        <div id="event-stats-banner" style="display: flex; justify-content: space-around; background: #2f3640; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 12px;">
+          <div>💰 <span id="ev-money" style="font-weight: bold; color: #4cd137;">$1000</span></div>
+          <div>⭐ <span id="ev-approval" style="font-weight: bold; color: #00a8ff;">50%</span></div>
+          <div>😊 <span id="ev-happy" style="font-weight: bold; color: #eccc68;">80%</span></div>
+          <div>☣ <span id="ev-pollution" style="font-weight: bold; color: #ff4757;">0</span></div>
+        </div>
+        <div id="event-fac-banner" style="display: flex; justify-content: space-around; background: #1e272e; border: 1px solid #3c6382; padding: 6px; border-radius: 6px; margin-bottom: 15px; font-size: 11px; color: #a4b0be;">
+          <div>Env: <span id="ev-fac-env" style="color: #fff; font-weight: bold;">50%</span></div>
+          <div>Tycoon: <span id="ev-fac-tycoon" style="color: #fff; font-weight: bold;">50%</span></div>
+          <div>Labor: <span id="ev-fac-labor" style="color: #fff; font-weight: bold;">50%</span></div>
+          <div>Residents: <span id="ev-fac-residents" style="color: #fff; font-weight: bold;">50%</span></div>
+        </div>
         <div id="event-desc" class="event-description">A major leak has been reported.</div>
         <div id="event-opts" class="event-options"></div>
       </div>
@@ -668,6 +680,27 @@ export class HtmlUI {
     const titleDiv = this.eventModalElement.querySelector('#event-title') as HTMLDivElement;
     const descDiv = this.eventModalElement.querySelector('#event-desc') as HTMLDivElement;
     const optsDiv = this.eventModalElement.querySelector('#event-opts') as HTMLDivElement;
+
+    // Update statistics banner inside event modal
+    const moneySpan = this.eventModalElement.querySelector('#ev-money');
+    const approvalSpan = this.eventModalElement.querySelector('#ev-approval');
+    const happySpan = this.eventModalElement.querySelector('#ev-happy');
+    const pollutionSpan = this.eventModalElement.querySelector('#ev-pollution');
+
+    const envSpan = this.eventModalElement.querySelector('#ev-fac-env');
+    const tycoonSpan = this.eventModalElement.querySelector('#ev-fac-tycoon');
+    const laborSpan = this.eventModalElement.querySelector('#ev-fac-labor');
+    const residentsSpan = this.eventModalElement.querySelector('#ev-fac-residents');
+
+    if (moneySpan) moneySpan.textContent = `$${GameState.money}`;
+    if (approvalSpan) approvalSpan.textContent = `${GameState.overallApproval}%`;
+    if (happySpan) happySpan.textContent = `${GameState.happiness}%`;
+    if (pollutionSpan) pollutionSpan.textContent = `${GameState.pollution}`;
+
+    if (envSpan) envSpan.textContent = `${Math.round(GameState.factionApproval.env)}%`;
+    if (tycoonSpan) tycoonSpan.textContent = `${Math.round(GameState.factionApproval.tycoon)}%`;
+    if (laborSpan) laborSpan.textContent = `${Math.round(GameState.factionApproval.labor)}%`;
+    if (residentsSpan) residentsSpan.textContent = `${Math.round(GameState.factionApproval.residents)}%`;
 
     if (titleDiv) titleDiv.textContent = event.title;
     if (descDiv) descDiv.textContent = event.description;
