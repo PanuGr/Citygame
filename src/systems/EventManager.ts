@@ -16,8 +16,8 @@ export class EventManager {
     const speedMultiplier = GameState.gameSpeed;
     this.timer += deltaMs * speedMultiplier;
 
-    // Monthly tick interval (3000ms base)
-    const interval = 3000;
+    // Monthly tick interval (12000ms base = 12 seconds per month)
+    const interval = 12000;
     if (this.timer >= interval) {
       this.timer -= interval;
       this.advanceMonth();

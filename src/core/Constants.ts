@@ -4,7 +4,7 @@ export const GAME_CONFIG = {
   TILE_SIZE: 50,
   GRID_WIDTH: 16,
   GRID_HEIGHT: 12,
-  TICK_INTERVAL_MS: 3000, // Monthly tick base interval at 1x speed
+  TICK_INTERVAL_MS: 12000, // Monthly tick base interval at 1x speed (12 seconds per month)
 };
 
 export const MONTH_NAMES = [

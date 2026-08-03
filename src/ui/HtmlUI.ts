@@ -545,7 +545,6 @@ export class HtmlUI {
         <div class="time-controls">
           <button class="time-btn ${GameState.gameSpeed === 0 ? 'active' : ''}" data-speed="0">PAUSE</button>
           <button class="time-btn ${GameState.gameSpeed === 1 ? 'active' : ''}" data-speed="1">1x</button>
-          <button class="time-btn ${GameState.gameSpeed === 2 ? 'active' : ''}" data-speed="2">2x</button>
         </div>
       </div>
     `;
