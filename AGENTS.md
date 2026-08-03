@@ -1,8 +1,30 @@
 # AGENTS.md
+## Before writing any code
+Stop at the first rung that holds:
+1. Does this need to be built at all? (YAGNI)
+2. Does the Phaser library already do this? Use it.
+3. Does a native platform feature cover it? Use it.
+4. Does an already-installed dependency solve it? Use it.
+5. Can this be one line? Make it one line.
+6. Only then: write the minimum code that works.
+
+## Rules:
+- Semantic HTML5 always
+- No class constructors in JavaScript — clean, named functions only
+- TypeScript only where necessary; keep it minimal
+- Centralize design tokens as CSS variables, not inline styles
+- No abstractions that weren't explicitly requested.
+- No new dependency if it can be avoided.
+- No boilerplate nobody asked for.
+- Deletion over addition. Boring over clever. Fewest files possible.
+- Question complex requests: "Do you actually need X, or does Y cover it?"
+- Pick the edge-case-correct option when two stdlib approaches are the same size, lazy means less code, not the flimsier algorithm.
+- Mark intentional simplifications with a `ponytail:` comment. If the shortcut has a known ceiling (global lock, O(n²) scan, naive heuristic), the comment names the ceiling and the upgrade path.
+
+**Not lazy about**: input validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs (the platform is never the spec ideal, a clock drifts, a sensor reads off), anything explicitly requested. Lazy code without its check is unfinished: non-trivial logic leaves ONE runnable check behind, the smallest thing that fails if the logic breaks (an assert-based demo/self-check or one small test file; no frameworks, no fixtures). Trivial one-liners need no test.
 
 ## Repository Overview
 - **Type**: Browser-based 2D city builder game ("Be the Mayor").
-<<<<<<< HEAD
 - **Stack**: HTML5, TypeScript, Vite, and Phaser 3.87+ (template-vite-ts).
 - **Entrypoints**: 
   - `index.html`: Main HTML container with `#phaser-game` canvas mount point and UI controls.
@@ -23,19 +45,3 @@
   - `src/game/systems/SaveManager.ts`: LocalStorage persistence (`'cityBuilderSave'`).
   - `src/game/ui/HtmlUI.ts`: HTML DOM interaction (dropdown population, save/reset buttons).
 - **Assets**: Stored in `public/assets/` using `.avif` format (`house1.avif`, `factory.avif`, `park.avif`, `powerplant.avif`, `tower.avif`, `background.avif`).
-=======
-- **Stack**: Vanilla HTML5, JavaScript (ES6+), and [Phaser.js 3.87.0](https://rexrainbow.github.io/phaser3-rex-notes/) loaded via CDN.
-- **Entrypoints**: 
-  - `index.html`: Main HTML container with Phaser canvas mount point and UI controls.
-  - `game.js`: Core game logic, containing Phaser scenes (`MainMenuScene`, `GameScene`), simulation loop, zoning, and building definitions.
-
-## Development & Running
-- **Running Locally**: Since there is no bundler or package manager (no `package.json`), run via any static file server (e.g., Python `http.server`, VS Code Live Server, or `npx serve`).
-- **Testing / Linting**: There is no automated test suite, build step, linter, or typechecker configured in this repository. Verification is manual via browser inspection.
-
-## Architecture Notes
-- **Phaser 3 Scenes**: Handled entirely in `game.js` starting with `MainMenuScene` transitioning into `GameScene`.
-- **Assets**: Stored in `assets/` using `.avif` format (e.g., `house1.avif`, `factory.avif`, `park.avif`, `powerplant.avif`, `tower.avif`, `background.avif`).
-- **Persistence**: Game state utilizes browser `localStorage` under key `'cityBuilderSave'`.
-- **UI Interaction**: DOM elements outside the canvas (e.g., `#ui-container`, `#building-select`, Save/Reset buttons) interact with the Phaser game loop.
->>>>>>> 8fba97b3ee5f5acbd1be3e6e908a139b08db85f8
