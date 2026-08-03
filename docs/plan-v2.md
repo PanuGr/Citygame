@@ -59,10 +59,10 @@ than adding one — and most of the Democracy-style engine already exists.
 
 Grid/placement layer — the part being cut:
 
-- `src/systems/GridManager.ts` — placement/demolition logic, entire file
-- `src/objects/Building.ts` — per-tile sprite with status badges, entire file
-- `src/objects/Citizen.ts` — commuter sprites, entire file
-- In `GameScene.ts`: `handlePointerMove`, `handlePointerDown`,
+- [x] `src/systems/GridManager.ts` — placement/demolition logic, entire file
+- [x] `src/objects/Building.ts` — per-tile sprite with status badges, entire file
+- [x] `src/objects/Citizen.ts` — commuter sprites, entire file
+- [x] In `GameScene.ts`: `handlePointerMove`, `handlePointerDown`,
   `reconstructCityFromState`, `spawnAmbientCommuter`,
   `updateBuildingStatuses`
 - In `HtmlUI.ts`: building-select toolbar wiring inside `createToolbar`
