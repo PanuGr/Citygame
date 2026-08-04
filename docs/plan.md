@@ -3,16 +3,6 @@
 Pivot from grid-placement city builder to Democracy-style policy management.
 City map becomes a passive visual layer, not an interaction surface.
 
-## Why the pivot
-
-Tracking per-building stats/levels via manual grid placement turned out to
-not be the fun part. The Democracy-style feedback loop (policy → stats →
-consequence) is. Cutting manual placement removes the most expensive
-subsystem (`GridManager`, placement UI, per-cell save/render data) rather
-than adding one — and most of the Democracy-style engine already exists.
-
----
-
 ## Core Loop
 
 - **Turn-based**, not real-time. 1 turn = 1 month. Player advances manually
@@ -32,66 +22,7 @@ than adding one — and most of the Democracy-style engine already exists.
 - **Fail state**: population reaches 0 triggers game over. Sandbox/score-only otherwise.
 
 ---
-
-## What already fits, keep as-is
-
-- `PolicyManager.ts` — `setTaxRate`, `togglePolicy`,
-  `applyMonthlyPolicyEffects`, `recalculateFactionImpact`. This *is* the
-  Democracy engine. No rewrite needed structurally, but faction math
-  simplifies — see "Factions" below.
-- `GameState.ts` — `overallApproval` getter, `PolicySettings` — right
-  shape for this direction. `FactionApproval` interface shrinks to a
-  single `residents` field (see below).
-- `EventManager.ts` — `advanceMonth`, `selectMonthlyEvent`,
-  `resolveEventChoice` — EU4-style event cards, keep whole.
-- `EconomyManager.ts` — keep the file and its role (monthly financial
-  resolution), but its internals need to change (see below).
-- `SaveManager.ts` — keep, but drop `gridData` from `SavePayload`.
-- `HtmlUI.ts` — keep HUD, policy modal, event modal, game-over modal. Drop
-  the building-placement toolbar.
-- `Constants.ts` — keep `PolicySettings`, `ChoiceOption`, `CityEvent`.
-  `BuildingTypeConfig` shrinks (see below).
-
----
-
-## What gets deleted
-
-Grid/placement layer — the part being cut:
-
-- [x] `src/systems/GridManager.ts` — placement/demolition logic, entire file
-- [x] `src/objects/Building.ts` — per-tile sprite with status badges, entire file
-- [x] `src/objects/Citizen.ts` — commuter sprites, entire file
-- [x] In `GameScene.ts`: `handlePointerMove`, `handlePointerDown`,
-  `reconstructCityFromState`, `spawnAmbientCommuter`,
-  `updateBuildingStatuses`
-- In `HtmlUI.ts`: building-select toolbar wiring inside `createToolbar`
-- **Building buttons + Demolish button** (Residential House, Industrial
-  Factory, Coal Power Plant, Green Energy Station, Public Park, Demolish)
-  — buildings now spawn/despawn automatically based on city state, no
-  manual placement or removal at all
-- `gridData` field from `SaveManager`'s `SavePayload`
-
-### Development threshold (new concept, needs defining)
-
-Buildings appearing/disappearing automatically means each building type
-needs a **threshold** — a population/pollution/approval condition that
-decides when it spawns or despawns on the visual grid. E.g. (illustrative,
-not final numbers):
-
-- Residential House: appears once population crosses N per house-slot
-- Industrial Factory: appears once `industrialSubsidies` has been on for
-  some turns, or population supports it
-- Coal Power Plant / Green Energy Station: appears based on which
-  utility policy is active
-- Public Park: appears once approval/happiness crosses a threshold
-
-This threshold table lives alongside the visual-render step (see
-"What gets rewritten" below) — it decides *what shows up*, separate from
-`policy.ts` which decides *what the underlying stats are*.
-
----
-
-## Factions — start with Residents only
+## Factions — Residents only
 
 Cut the 4-faction split (Environmentalists / Tycoons / Labor / Residents)
 down to **one faction: Residents.** `overallApproval` becomes just
@@ -111,48 +42,8 @@ residents' approval directly — no averaging across factions needed.
 - `policy.ts` / `policy.md`: every policy's `approval` effect becomes a
   single number (residents only), not a per-faction object. See updated
   shape below.
-- **Env / Tycoon / Labor are deferred, not deleted from the plan** —
-  same call as the original single-approval-number decision: add them
-  back once Residents-only feedback loop feels good and more policies
-  exist that would actually pull those groups in different directions.
-  Right now with 4 policies and 1 faction there's nothing for extra
-  factions to disagree about yet.
 
 ---
-
-## What gets rewritten
-
-**`GameScene.ts`** becomes thin: no pointer input, no per-tile
-reconstruction. Just calls a new visual-render step each turn.
-
-**New: city visual layer** (either a small `CityVisualManager.ts` in
-`src/systems/`, or a method folded into `GameScene`) — takes
-`population`, `pollution`, `approval` from `GameState` and scatters
-house/factory/park sprites procedurally. No `GridManager` dependency, no
-click-to-place, no per-cell state.
-
-**`EconomyManager.ts` — the core data-model shift.** Right now population/
-jobs/pollution are *derived from placed buildings* (`BuildingTypeConfig`
-fields summed over the grid). In the Democracy direction they need to be
-*derived from policy state directly*:
-
-```ts
-// EconomyManager, new shape (illustrative)
-population += growthRate(approval, budget);           // per turn
-pollution = basePollution
-  + (industrialSubsidies ? INDUSTRIAL_POLLUTION : 0)
-  - (greenEnergyMandate ? GREEN_ENERGY_REDUCTION : 0);
-jobs = population * employmentRate(policySettings);
-```
-
-`BuildingTypeConfig` (in `Constants.ts`) loses `cost` / `population` /
-`jobs` / `utilitySupply` / `utilityDemand` — those effects move onto
-policy definitions instead. What's left of `BuildingTypeConfig` is purely
-visual: `textureKey` and a population/pollution threshold that decides
-when that building type starts appearing on the map.
-
----
-
 ## Starting values & core formulas
 
 City starts at:
@@ -162,8 +53,8 @@ City starts at:
 | Treasury | $500 |
 | Population | 100 |
 | Mayor Approval | 50% |
-| Pollution | 0% (range 0–100%) |
-| Utilities Balance | 50% (range 0–100%+) |
+| Pollution | 20% (range 0–100%) |
+| Utilities Balance | 50% (range 0–100%) |
 
 **Happiness is removed** — redundant with Approval, same underlying
 signal under two names.
@@ -218,9 +109,6 @@ everything else stays sandbox/score-only per the original decision.
 - **Side panel** (new, persistent — not a modal): houses the 4 policy
   controls (tax rate slider + 3 toggles). Always visible, no open/close
   state to manage — simpler than the existing `createPolicyModal`.
-- **Bottom toolbar**: building buttons and Demolish button removed
-  entirely (see below). `Policies` button removed since the panel is now
-  always on screen. `Save` / `Reset` remain.
 - **Top HUD**: Treasury, Mayor Approval, Utilities Balance, Pollution,
   month/pause/speed stay. Happiness is removed (see Starting Values
   section) — drop it from the HUD display too.
@@ -295,29 +183,3 @@ balancing by hand before touching code, and a running doc as more
 policies get added later. Update both files together when a policy
 changes — `policy.md` is documentation, `policy.ts` is the source of
 truth the game actually reads.
-
----
-
-## Order of work
-
-1. Write `policy.md` first — sketch the 4 policies' effects in plain
-   language/tables before touching any code. Cheap to change on paper.
-2. Translate `policy.md` into `src/core/policy.ts`.
-3. Strip `GameScene.ts` input handlers + grid reconstruction — confirm the
-   game still boots with a static/empty map and existing HUD.
-4. Rewrite `EconomyManager`'s growth formula to be policy-driven, reading
-   from `policy.ts`, using the starting values and formulas above
-   (population growth tied to approval distance from 50, asymmetric
-   utilities effect, pollution-driven approval). This is the core "does
-   it feel like Democracy" piece — do it first, iterate on numbers before
-   anything else.
-5. Add the population-0 game-over check.
-6. Define the development-threshold table (what makes each building type
-   spawn/despawn) and add the visual-render step. Cosmetic, done after
-   the sim math feels right.
-7. Delete `GridManager.ts`, `Building.ts`, `Citizen.ts`, building/Demolish
-   buttons. Trim `SavePayload` and `HtmlUI` toolbar. Remove Happiness
-   from state and HUD. Add the persistent policy side panel, apply the
-   grid layout/tilt.
-8. Re-run `npx tsc --noEmit` after each step to keep types consistent
-   through the deletions.
