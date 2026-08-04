@@ -1,0 +1,22 @@
+{
+  "entry": [
+    "src/main.ts"
+  ],
+  "usedClassMembers": [
+    {
+      "extends": "Phaser.Scene",
+      "members": [
+        "init",
+        "preload",
+        "create",
+        "update",
+        "render"
+      ]
+    }
+  ],
+  "duplicates": {
+    "minOccurrences": 3,
+    "ignore": []
+  },
+  "rules": {}
+}

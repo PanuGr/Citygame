@@ -5,9 +5,7 @@ Human-editable reference for policy effects. Mirrors `src/core/policy.ts`
 versa). This file is for sketching/balancing by hand; `policy.ts` is what
 the game actually reads.
 
-**Faction note:** v1 has one faction, Residents. Environmentalist/Tycoon/
-Labor factions are deferred, not deleted; add them back once more
-policies exist that would pull separate groups in different directions.
+**Faction note:** v1 has one faction, Residents.
 
 **Approval model — all effects are % of current value, not flat.** Every
 stat effect below scales with the city's current value (e.g. pollution
