@@ -10,7 +10,8 @@
     "build": "tsc && vite build",
     "build-nolog": "tsc && vite build",
     "preview": "vite preview",
-    "pack": "repomix"
+    "pack": "repomix",
+    "fallow":"fallow"
   },
   "dependencies": {
     "phaser": "4.2.1"
