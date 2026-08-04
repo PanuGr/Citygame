@@ -1,0 +1,21 @@
+{
+  "output": {
+    "style": "xml",
+    "filePath": "codebase.xml",
+    "fileSummary":false,
+    "removeComments": true,
+    "removeEmptyLines":true,
+    "compress":true,
+    "showLineNumbers": true
+  },
+  "ignore": {
+    "customPatterns": [
+      ".agents/**",
+      "docs/**",
+      ".vscode/**",
+      "public/**",
+      "*.md",
+      "*.json"
+    ]
+  }
+}

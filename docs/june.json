@@ -1,0 +1,21 @@
+{
+    "version": 4,
+    "money": 738,
+    "month": 6,
+    "year": 1,
+    "population": 26,
+    "pollution": 20,
+    "jobs": 16,
+    "utilitySupply": 50,
+    "utilityDemand": 21,
+    "utilitiesBalance": 100,
+    "policies": {
+        "taxRate": 50,
+        "greenEnergyMandate": 0,
+        "industrialSubsidies": 0,
+        "publicTransitFunding": 0
+    },
+    "factionApproval": {
+        "residents": 23
+    }
+}
