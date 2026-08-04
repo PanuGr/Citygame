@@ -18,39 +18,34 @@ export class EconomyManager {
     const baseTaxPerCapita = POLICY_DATA.TAX_RATE.effects.treasuryPerStep || 10;
     const rawTaxRevenue = Math.round(GameState.population * (taxSteps * (baseTaxPerCapita / 10)));
 
-    // 2. Pollution calculation
+    // 2. Pollution calculation (policy strength = slider value / 100)
     let pollution = 20; // base ambient
-    if (p.greenEnergyMandate) {
-      pollution *= (1 + (POLICY_DATA.GREEN_ENERGY_MANDATE.effects.pollutionPct || -0.30));
-    }
-    if (p.industrialSubsidies) {
-      pollution *= (1 + (POLICY_DATA.INDUSTRIAL_SUBSIDIES.effects.pollutionPct || 0.25));
-    }
-    if (p.publicTransitFunding) {
-      pollution *= (1 + (POLICY_DATA.PUBLIC_TRANSIT_FUNDING.effects.pollutionPct || -0.15));
-    }
+    pollution *= (1 + (POLICY_DATA.GREEN_ENERGY_MANDATE.effects.pollutionPct || -0.30) * (p.greenEnergyMandate / 100));
+    pollution *= (1 + (POLICY_DATA.INDUSTRIAL_SUBSIDIES.effects.pollutionPct || 0.25) * (p.industrialSubsidies / 100));
+    pollution *= (1 + (POLICY_DATA.PUBLIC_TRANSIT_FUNDING.effects.pollutionPct || -0.15) * (p.publicTransitFunding / 100));
     GameState.pollution = Math.max(0, Math.min(100, Math.round(pollution)));
 
-    // 3. Utilities Balance calculation (50% neutral)
-    let utilitySupply = 50;
-    let utilityDemand = Math.round(GameState.population * 0.5);
-    if (p.greenEnergyMandate) {
-      utilitySupply *= (1 + (POLICY_DATA.GREEN_ENERGY_MANDATE.effects.utilitiesOutputPct || 0.20));
-    }
-    GameState.utilitySupply = Math.round(utilitySupply);
-    GameState.utilityDemand = utilityDemand;
+    // 3. Utilities — supply/demand is the display layer; the balance stat
+    //    self-corrects toward 100 (full coverage) each turn instead of being
+    //    held wherever the last policy left it. The supply/demand ratio only
+    //    modulates how fast it recovers (shortage = slower, surplus = faster).
+    const greenSupply = 1 + (POLICY_DATA.GREEN_ENERGY_MANDATE.effects.utilitiesOutputPct || 0.20) * (p.greenEnergyMandate / 100);
+    GameState.utilitySupply = Math.round(50 * greenSupply);
+    GameState.utilityDemand = Math.round(GameState.population * 0.5);
 
-    const utilitiesBalance = Math.round((GameState.utilitySupply / Math.max(1, GameState.utilityDemand)) * 50);
+    const ratio = GameState.utilitySupply / Math.max(1, GameState.utilityDemand);
+    const step = 0.1 * Math.max(0.4, Math.min(1.6, ratio));
+    GameState.utilitiesBalance = GameState.utilitiesBalance + (100 - GameState.utilitiesBalance) * step;
 
     // 4. Asymmetric Utilities Effect & Pollution Penalty on Approval
-    const distance = utilitiesBalance - 50;
+    const distance = GameState.utilitiesBalance - 100;
     let approvalDelta = 0;
 
     // Pollution penalty on approval
     approvalDelta -= Math.round(GameState.pollution * 0.1);
 
     if (distance < 0) {
-      // Shortage hurts both treasury and approval
+      // Shortage hurts approval (self-correcting, so the penalty fades over time)
       approvalDelta -= Math.round(Math.abs(distance) / 5);
     } else {
       // Oversupply helps approval only
@@ -67,9 +62,7 @@ export class EconomyManager {
 
     // 6. Jobs calculation
     let jobsRate = 0.6;
-    if (p.industrialSubsidies) {
-      jobsRate += (POLICY_DATA.INDUSTRIAL_SUBSIDIES.effects.jobsGrowthPct || 0.15);
-    }
+    jobsRate += (POLICY_DATA.INDUSTRIAL_SUBSIDIES.effects.jobsGrowthPct || 0.15) * (p.industrialSubsidies / 100);
     GameState.jobs = Math.round(GameState.population * jobsRate);
 
     // 7. Financials
@@ -92,8 +85,8 @@ export class EconomyManager {
     GameState.money += summary.netIncome;
     PolicyManager.applyMonthlyPolicyEffects();
 
-    // Check population-0 game over
-    if (GameState.population <= 0) {
+    // Check population collapse game over
+    if (GameState.population <= 10) {
       GameState.isGameOver = true;
     }
 

@@ -4,34 +4,20 @@ import { POLICY_DATA } from '../core/policy';
 import { EventBus } from '../core/EventBus';
 
 export class PolicyManager {
-  public static setTaxRate(rate: number): void {
-    const clamped = Math.max(0, Math.min(100, rate));
-    GameState.policies.taxRate = clamped;
-    PolicyManager.recalculateFactionImpact();
-    EventBus.emit(EVENTS.POLICY_CHANGED, GameState.policies);
-    GameState.emitChange();
-  }
-
-  public static togglePolicy(policyKey: keyof Omit<PolicySettings, 'taxRate'>): void {
-    GameState.policies[policyKey] = !GameState.policies[policyKey];
-    PolicyManager.recalculateFactionImpact();
+  public static setPolicyValue(policyKey: keyof PolicySettings, value: number): void {
+    const clamped = Math.max(0, Math.min(100, value));
+    GameState.policies[policyKey] = clamped;
     EventBus.emit(EVENTS.POLICY_CHANGED, GameState.policies);
     GameState.emitChange();
   }
 
   public static getMonthlyPolicyUpkeep(): number {
-    let cost = 0;
-    const treasury = GameState.money;
-    if (GameState.policies.greenEnergyMandate) {
-      cost += Math.abs(POLICY_DATA.GREEN_ENERGY_MANDATE.effects.upkeepPctOfTreasury || 0.02) * 500;
-    }
-    if (GameState.policies.industrialSubsidies) {
-      cost += 30;
-    }
-    if (GameState.policies.publicTransitFunding) {
-      cost += Math.abs(POLICY_DATA.PUBLIC_TRANSIT_FUNDING.effects.upkeepPctOfTreasury || 0.015) * 500;
-    }
-    return Math.round(cost);
+    const p = GameState.policies;
+    const upkeep =
+      (POLICY_DATA.GREEN_ENERGY_MANDATE.effects.upkeepPctOfTreasury || 0) * 500 * (p.greenEnergyMandate / 100) +
+      (POLICY_DATA.INDUSTRIAL_SUBSIDIES.effects.upkeepPctOfTreasury || 0) * 500 * (p.industrialSubsidies / 100) +
+      (POLICY_DATA.PUBLIC_TRANSIT_FUNDING.effects.upkeepPctOfTreasury || 0) * 500 * (p.publicTransitFunding / 100);
+    return Math.round(upkeep);
   }
 
   public static applyMonthlyPolicyEffects(): void {
@@ -42,11 +28,5 @@ export class PolicyManager {
     const taxSteps = p.taxRate / (POLICY_DATA.TAX_RATE.step || 10);
     const taxApprovalHit = taxSteps * (taxEffects.approvalPerStep || -2);
     GameState.updateFaction('residents', taxApprovalHit);
-
-    // Other policies affect stats via EconomyManager, but we can nudge approval or apply indirect effects here if needed
-  }
-
-  public static recalculateFactionImpact(): void {
-    // Helper method called when policies change
   }
 }

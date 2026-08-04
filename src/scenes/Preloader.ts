@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { GAME_CONFIG } from '../core/Constants';
 
 export class Preloader extends Phaser.Scene {
   constructor() {
@@ -44,7 +45,7 @@ export class Preloader extends Phaser.Scene {
   }
 
   public create(): void {
-    // Generate simple particle texture and grass grid texture
+    // Generate the procedural isometric grass tile texture
     this.createProceduralTextures();
 
     // Move to MainMenu scene
@@ -52,22 +53,22 @@ export class Preloader extends Phaser.Scene {
   }
 
   private createProceduralTextures(): void {
-    // 1. Procedural grass tile for our grid cell
+    // Isometric diamond grass tile (2:1 ratio to match ISO_HALF_W/H)
+    const isoW = GAME_CONFIG.ISO_HALF_W * 2;
+    const isoH = GAME_CONFIG.ISO_HALF_H * 2;
     const grass = this.make.graphics({ x: 0, y: 0 }, false);
-    // Soft meadow green color
+    const diamond = [
+      new Phaser.Math.Vector2(isoW / 2, 0),
+      new Phaser.Math.Vector2(isoW, isoH / 2),
+      new Phaser.Math.Vector2(isoW / 2, isoH),
+      new Phaser.Math.Vector2(0, isoH / 2),
+    ];
+    // Soft meadow green fill with a subtle border
     grass.fillStyle(0x27ae60, 1);
-    grass.fillRect(0, 0, 50, 50);
-    // Subtle border
+    grass.fillPoints(diamond, true);
     grass.lineStyle(1, 0x2ecc71, 0.4);
-    grass.strokeRect(0, 0, 50, 50);
-    grass.generateTexture('grass_tile', 50, 50);
+    grass.strokePoints(diamond, true);
+    grass.generateTexture('grass_tile', isoW, isoH);
     grass.destroy();
-
-    // 2. Hover indicator
-    const hover = this.make.graphics({ x: 0, y: 0 }, false);
-    hover.lineStyle(3, 0xf1c40f, 0.8);
-    hover.strokeRect(0, 0, 50, 50);
-    hover.generateTexture('hover_tile', 50, 50);
-    hover.destroy();
   }
 }

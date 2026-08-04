@@ -1,10 +1,13 @@
 export const GAME_CONFIG = {
   WIDTH: 800,
   HEIGHT: 600,
-  TILE_SIZE: 50,
   GRID_WIDTH: 16,
   GRID_HEIGHT: 12,
   TICK_INTERVAL_MS: 12000, // Monthly tick base interval at 1x speed (12 seconds per month)
+  // Isometric diamond tile: HALF_W:HALF_H keeps the 2:1 iso ratio. Map spans
+  // (GRID_WIDTH + GRID_HEIGHT) * HALF_W wide by (GRID_WIDTH + GRID_HEIGHT) * HALF_H tall.
+  ISO_HALF_W: 28,
+  ISO_HALF_H: 14,
 };
 
 export const MONTH_NAMES = [
@@ -101,30 +104,27 @@ export const BUILDINGS: Record<string, BuildingTypeConfig> = {
 };
 
 export interface PolicySettings {
-  taxRate: number; // 0 to 25 (%)
-  greenEnergyMandate: boolean; // upkeep $50, env +15, tycoon -10
-  industrialSubsidies: boolean; // upkeep $60, tycoon +20, env -15, jobs +15%
-  publicTransitFunding: boolean; // upkeep $40, union +15, residents +15, pollution -5
+  taxRate: number; // 0 to 100 (%), 10% steps
+  greenEnergyMandate: number; // 0 to 100 (% strength)
+  industrialSubsidies: number; // 0 to 100 (% strength)
+  publicTransitFunding: number; // 0 to 100 (% strength)
 }
 
 export const DEFAULT_POLICIES: PolicySettings = {
   taxRate: 10,
-  greenEnergyMandate: false,
-  industrialSubsidies: false,
-  publicTransitFunding: false,
+  greenEnergyMandate: 0,
+  industrialSubsidies: 0,
+  publicTransitFunding: 0,
 };
 
 export interface ChoiceOption {
   text: string;
   description: string;
-  moneyChange: number;
+  moneyChangePct: number; // % of current treasury, e.g. 0.5 = +50%, -0.3 = -30%
   approvalChanges: {
-    env?: number;
-    tycoon?: number;
-    labor?: number;
-    residents?: number;
+    residents?: number; // flat approval points (approval is already 0-100)
   };
-  pollutionChange?: number;
+  pollutionChangePct?: number; // % of current pollution, e.g. -0.5 = -50%
   happinessChange?: number;
 }
 
@@ -143,17 +143,17 @@ export const EVENT_DATABASE: CityEvent[] = [
     options: [
       {
         text: 'Fine the Factory heavily',
-        description: 'Gain $500, +15 Environmentalist approval, -15 Tycoon approval',
-        moneyChange: 500,
-        approvalChanges: { env: 15, tycoon: -15 },
-        pollutionChange: -5,
+        description: 'Gain a portion of treasury, +15 Resident approval',
+        moneyChangePct: 0.5,
+        approvalChanges: { residents: 15 },
+        pollutionChangePct: -0.25,
       },
       {
         text: 'Offer government cleanup assistance',
-        description: 'Cost $300, +10 Tycoon approval, +5 Resident approval',
-        moneyChange: -300,
-        approvalChanges: { tycoon: 10, residents: 5, env: -5 },
-        pollutionChange: -10,
+        description: 'Cost a portion of treasury, +10 Resident approval',
+        moneyChangePct: -0.3,
+        approvalChanges: { residents: 10 },
+        pollutionChangePct: -0.5,
       },
     ],
   },
@@ -164,16 +164,16 @@ export const EVENT_DATABASE: CityEvent[] = [
     options: [
       {
         text: 'Meet worker demands',
-        description: 'Cost $400, +20 Union approval, +10 Resident approval',
-        moneyChange: -400,
-        approvalChanges: { labor: 20, residents: 10, tycoon: -10 },
+        description: 'Cost a portion of treasury, +15 Resident approval',
+        moneyChangePct: -0.4,
+        approvalChanges: { residents: 15 },
         happinessChange: 10,
       },
       {
         text: 'Refuse negotiation',
-        description: 'Save money, -20 Union approval, -10 Resident approval',
-        moneyChange: 0,
-        approvalChanges: { labor: -20, residents: -10, tycoon: 10 },
+        description: 'Save money, -15 Resident approval',
+        moneyChangePct: 0,
+        approvalChanges: { residents: -15 },
         happinessChange: -10,
       },
     ],
@@ -185,17 +185,17 @@ export const EVENT_DATABASE: CityEvent[] = [
     options: [
       {
         text: 'Fund the Initiative',
-        description: 'Cost $500, +20 Environmentalist approval, +10 Resident approval',
-        moneyChange: -500,
-        approvalChanges: { env: 20, residents: 10 },
-        pollutionChange: -15,
+        description: 'Cost a portion of treasury, +15 Resident approval',
+        moneyChangePct: -0.5,
+        approvalChanges: { residents: 15 },
+        pollutionChangePct: -0.75,
         happinessChange: 5,
       },
       {
         text: 'Decline for now',
-        description: 'Save funds, -5 Environmentalist approval',
-        moneyChange: 0,
-        approvalChanges: { env: -5 },
+        description: 'Save funds, -5 Resident approval',
+        moneyChangePct: 0,
+        approvalChanges: { residents: -5 },
       },
     ],
   },
@@ -206,16 +206,16 @@ export const EVENT_DATABASE: CityEvent[] = [
     options: [
       {
         text: 'Subsidize Affordable Housing',
-        description: 'Cost $400, +15 Resident approval, +15 Union approval',
-        moneyChange: -400,
-        approvalChanges: { residents: 15, labor: 15, tycoon: -5 },
+        description: 'Cost a portion of treasury, +20 Resident approval',
+        moneyChangePct: -0.4,
+        approvalChanges: { residents: 20 },
         happinessChange: 15,
       },
       {
         text: 'Allow market self-regulation',
-        description: '+15 Tycoon approval, -15 Resident approval',
-        moneyChange: 0,
-        approvalChanges: { tycoon: 15, residents: -15 },
+        description: '-15 Resident approval',
+        moneyChangePct: 0,
+        approvalChanges: { residents: -15 },
         happinessChange: -10,
       },
     ],
@@ -227,16 +227,16 @@ export const EVENT_DATABASE: CityEvent[] = [
     options: [
       {
         text: 'Sponsor the Expo',
-        description: 'Cost $300, +25 Tycoon approval, +10 Labor approval',
-        moneyChange: -300,
-        approvalChanges: { tycoon: 25, labor: 10 },
+        description: 'Cost a portion of treasury, +5 Resident approval',
+        moneyChangePct: -0.3,
+        approvalChanges: { residents: 5 },
         happinessChange: 5,
       },
       {
         text: 'Decline invitation',
-        description: '-15 Tycoon approval',
-        moneyChange: 0,
-        approvalChanges: { tycoon: -15 },
+        description: '-5 Resident approval',
+        moneyChangePct: 0,
+        approvalChanges: { residents: -5 },
       },
     ],
   },
@@ -247,17 +247,17 @@ export const EVENT_DATABASE: CityEvent[] = [
     options: [
       {
         text: 'Enforce Emergency Emission Limits',
-        description: 'Cost $200, +20 Env approval, -15 Tycoon approval',
-        moneyChange: -200,
-        approvalChanges: { env: 20, tycoon: -15 },
-        pollutionChange: -20,
+        description: 'Cost a portion of treasury, +15 Resident approval',
+        moneyChangePct: -0.2,
+        approvalChanges: { residents: 15 },
+        pollutionChangePct: -0.5,
         happinessChange: 5,
       },
       {
         text: 'Issue health warnings only',
-        description: '-15 Resident approval, -10 Env approval',
-        moneyChange: 0,
-        approvalChanges: { residents: -15, env: -10 },
+        description: '-15 Resident approval',
+        moneyChangePct: 0,
+        approvalChanges: { residents: -15 },
         happinessChange: -10,
       },
     ],

@@ -7,6 +7,18 @@ the game actually reads.
 
 **Faction note:** v1 has one faction, Residents.
 
+**All four policies are sliders, 0–100%, 10% steps.** Effect magnitudes in
+the tables below are *full strength at 100*; the game scales them linearly by
+`slider / 100`. At 0 the policy is off.
+
+**Utilities Balance — 100% neutral, self-correcting.** Utilities are not held
+at whatever the last policy/population left them. Every turn the balance
+moves a fraction of the way back toward 100% (full coverage): a shortage
+recovers over time instead of staying stuck, and the supply/demand ratio only
+modulates how fast it recovers (shortage = slower, surplus = faster). Green
+Energy speeds recovery by boosting supply. Effects apply from distance to 100:
+shortage penalizes approval, oversupply (balance above 100) rewards it.
+
 **Approval model — all effects are % of current value, not flat.** Every
 stat effect below scales with the city's current value (e.g. pollution
 change is a % of current pollution, not a fixed number), so policies stay
@@ -17,7 +29,7 @@ Rate touches approval directly (a tax hike is felt immediately, not via
 some downstream stat). Every other policy affects approval *only* through
 the two channels the game already tracks:
 - **Pollution** — high pollution hurts approval
-- **Utilities Balance** — a shortfall hurts approval
+- **Utilities Balance** — a shortfall from 100 hurts approval
 
 So a policy that cuts pollution or boosts utilities earns approval
 indirectly, through those existing channels, rather than having its own
@@ -42,13 +54,13 @@ immediately, not through pollution or utilities.
 ---
 
 ## Green Energy Mandate
-**Type:** toggle
+**Type:** slider, 0–100%, moves in 10% steps (0 = off)
 
 | Effect | Direction | Notes |
 |---|---|---|
-| Pollution | − % | reduces pollution by a % of its current value |
-| Electricity output (Utilities Balance) | + % | adds clean supply, % boost |
-| Upkeep cost | − (cost) | % of treasury per turn, ongoing program cost |
+| Pollution | − % | −30% of current pollution at 100, scaled by slider |
+| Electricity output (Utilities Balance) | + % | +20% supply at 100 — speeds the self-correct toward 100 |
+| Upkeep cost | + (cost) | % of treasury per turn, scaled by slider |
 
 No direct approval line. Approval improves *only* as a side effect of
 lower pollution and better utilities balance — both already feed approval
@@ -57,12 +69,13 @@ elsewhere in the sim.
 ---
 
 ## Industrial Subsidies
-**Type:** toggle
+**Type:** slider, 0–100%, moves in 10% steps (0 = off)
 
 | Effect | Direction | Notes |
 |---|---|---|
-| Jobs / population growth | + % | |
-| Pollution | + % | increases pollution by a % of its current value — mirrors Green Energy's reduction, opposite direction |
+| Jobs / population growth | + % | +15% at 100, scaled by slider |
+| Pollution | + % | +25% of current pollution at 100 — mirrors Green Energy's reduction, opposite direction |
+| Upkeep cost | + (cost) | % of treasury per turn, scaled by slider |
 
 No direct approval line. Approval drops *only* as a side effect of
 rising pollution — same channel as Green Energy, opposite direction.
@@ -70,12 +83,12 @@ rising pollution — same channel as Green Energy, opposite direction.
 ---
 
 ## Public Transit Funding
-**Type:** toggle
+**Type:** slider, 0–100%, moves in 10% steps (0 = off)
 
 | Effect | Direction | Notes |
 |---|---|---|
-| Pollution | − % | transit cuts emissions, same mechanism as Green Energy |
-| Upkeep cost | − (cost) | % of treasury per turn, ongoing program cost |
+| Pollution | − % | −15% of current pollution at 100, scaled by slider |
+| Upkeep cost | + (cost) | % of treasury per turn, scaled by slider |
 
 No direct approval line. Approval improves only via the pollution
 reduction — no separate utilities or happiness stat touched, since

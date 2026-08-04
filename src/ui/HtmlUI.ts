@@ -138,16 +138,6 @@ export class HtmlUI {
         flex-direction: column;
         gap: 5px;
       }
-      .toggle-option {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #2f3640;
-        padding: 8px 10px;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        font-size: 12px;
-      }
       .aux-panel {
         position: fixed;
         bottom: 15px;
@@ -281,28 +271,29 @@ export class HtmlUI {
         </div>
         <input type="range" id="tax-slider" min="0" max="100" step="10" value="10" style="width: 100%; cursor: pointer;">
       </div>
-      <div class="policy-group">
-        <div class="toggle-option">
-          <div>
-            <div style="font-weight: bold;">Green Energy Mandate</div>
-            <div style="font-size: 10px; color: #a4b0be;">-30% Pollution | +20% Utilities</div>
-          </div>
-          <input type="checkbox" id="policy-green" style="transform: scale(1.2); cursor: pointer;">
+      <div class="policy-group slider-container">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="font-weight: bold;">Green Energy Mandate</span>
+          <span id="policy-green-val" style="color: #4cd137; font-weight: bold;">0%</span>
         </div>
-        <div class="toggle-option">
-          <div>
-            <div style="font-weight: bold;">Industrial Subsidies</div>
-            <div style="font-size: 10px; color: #a4b0be;">+15% Jobs | +25% Pollution</div>
-          </div>
-          <input type="checkbox" id="policy-subsidy" style="transform: scale(1.2); cursor: pointer;">
+        <div style="font-size: 10px; color: #a4b0be;">Pollution ↓ · Utilities ↑</div>
+        <input type="range" id="policy-green" min="0" max="100" step="10" value="0" style="width: 100%; cursor: pointer;">
+      </div>
+      <div class="policy-group slider-container">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="font-weight: bold;">Industrial Subsidies</span>
+          <span id="policy-subsidy-val" style="color: #4cd137; font-weight: bold;">0%</span>
         </div>
-        <div class="toggle-option">
-          <div>
-            <div style="font-weight: bold;">Public Transit Funding</div>
-            <div style="font-size: 10px; color: #a4b0be;">-15% Pollution</div>
-          </div>
-          <input type="checkbox" id="policy-transit" style="transform: scale(1.2); cursor: pointer;">
+        <div style="font-size: 10px; color: #a4b0be;">Jobs ↑ · Pollution ↑</div>
+        <input type="range" id="policy-subsidy" min="0" max="100" step="10" value="0" style="width: 100%; cursor: pointer;">
+      </div>
+      <div class="policy-group slider-container">
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="font-weight: bold;">Public Transit Funding</span>
+          <span id="policy-transit-val" style="color: #4cd137; font-weight: bold;">0%</span>
         </div>
+        <div style="font-size: 10px; color: #a4b0be;">Pollution ↓</div>
+        <input type="range" id="policy-transit" min="0" max="100" step="10" value="0" style="width: 100%; cursor: pointer;">
       </div>
     `;
     document.body.appendChild(this.policySidePanelElement);
@@ -313,23 +304,22 @@ export class HtmlUI {
       const val = parseInt((e.target as HTMLInputElement).value);
       const display = this.policySidePanelElement.querySelector('#tax-val-display');
       if (display) display.textContent = `${val}%`;
-      PolicyManager.setTaxRate(val);
+      PolicyManager.setPolicyValue('taxRate', val);
     });
 
-    const greenToggle = this.policySidePanelElement.querySelector('#policy-green') as HTMLInputElement;
-    greenToggle?.addEventListener('change', () => {
-      PolicyManager.togglePolicy('greenEnergyMandate');
-    });
+    const wireSlider = (id: string, valId: string, policyKey: 'greenEnergyMandate' | 'industrialSubsidies' | 'publicTransitFunding') => {
+      const input = this.policySidePanelElement.querySelector(id) as HTMLInputElement;
+      input?.addEventListener('input', (e) => {
+        const val = parseInt((e.target as HTMLInputElement).value);
+        const display = this.policySidePanelElement.querySelector(valId);
+        if (display) display.textContent = `${val}%`;
+        PolicyManager.setPolicyValue(policyKey, val);
+      });
+    };
 
-    const subsidyToggle = this.policySidePanelElement.querySelector('#policy-subsidy') as HTMLInputElement;
-    subsidyToggle?.addEventListener('change', () => {
-      PolicyManager.togglePolicy('industrialSubsidies');
-    });
-
-    const transitToggle = this.policySidePanelElement.querySelector('#policy-transit') as HTMLInputElement;
-    transitToggle?.addEventListener('change', () => {
-      PolicyManager.togglePolicy('publicTransitFunding');
-    });
+    wireSlider('#policy-green', '#policy-green-val', 'greenEnergyMandate');
+    wireSlider('#policy-subsidy', '#policy-subsidy-val', 'industrialSubsidies');
+    wireSlider('#policy-transit', '#policy-transit-val', 'publicTransitFunding');
   }
 
   private createEventModal(): void {
@@ -410,8 +400,8 @@ export class HtmlUI {
         </div>
         <div class="hud-stat">
           <span class="label">Utilities</span>
-          <span class="value" style="color: ${GameState.utilitySupply >= GameState.utilityDemand ? '#4cd137' : '#ff4757'}">
-            ${GameState.utilitySupply}/${GameState.utilityDemand}
+          <span class="value" style="color: ${GameState.utilitiesBalance < 100 ? '#ff4757' : GameState.utilitiesBalance > 100 ? '#4cd137' : '#ffffff'}">
+            ${GameState.utilitiesBalance}
           </span>
         </div>
         <div class="hud-stat">
@@ -445,21 +435,17 @@ export class HtmlUI {
     });
 
     // Update Side Panel state
-    const taxSlider = this.policySidePanelElement.querySelector('#tax-slider') as HTMLInputElement;
-    if (taxSlider) {
-      taxSlider.value = GameState.policies.taxRate.toString();
-      const display = this.policySidePanelElement.querySelector('#tax-val-display');
-      if (display) display.textContent = `${GameState.policies.taxRate}%`;
-    }
+    const syncSlider = (id: string, valId: string, value: number) => {
+      const input = this.policySidePanelElement.querySelector(id) as HTMLInputElement;
+      if (input) input.value = value.toString();
+      const display = this.policySidePanelElement.querySelector(valId);
+      if (display) display.textContent = `${value}%`;
+    };
 
-    const greenToggle = this.policySidePanelElement.querySelector('#policy-green') as HTMLInputElement;
-    if (greenToggle) greenToggle.checked = GameState.policies.greenEnergyMandate;
-
-    const subsidyToggle = this.policySidePanelElement.querySelector('#policy-subsidy') as HTMLInputElement;
-    if (subsidyToggle) subsidyToggle.checked = GameState.policies.industrialSubsidies;
-
-    const transitToggle = this.policySidePanelElement.querySelector('#policy-transit') as HTMLInputElement;
-    if (transitToggle) transitToggle.checked = GameState.policies.publicTransitFunding;
+    syncSlider('#tax-slider', '#tax-val-display', GameState.policies.taxRate);
+    syncSlider('#policy-green', '#policy-green-val', GameState.policies.greenEnergyMandate);
+    syncSlider('#policy-subsidy', '#policy-subsidy-val', GameState.policies.industrialSubsidies);
+    syncSlider('#policy-transit', '#policy-transit-val', GameState.policies.publicTransitFunding);
   }
 
   private showEventModal(event: CityEvent): void {

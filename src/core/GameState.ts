@@ -11,6 +11,7 @@ export class GameStateStore {
   public jobs: number = 50;
   public utilitySupply: number = 50;
   public utilityDemand: number = 50;
+  public utilitiesBalance: number = 100; // self-corrects toward 100 each turn
   public pollution: number = 0;
   public month: number = 1; // 1 to 12
   public year: number = 1;
@@ -33,6 +34,7 @@ export class GameStateStore {
     this.jobs = 50;
     this.utilitySupply = 50;
     this.utilityDemand = 50;
+    this.utilitiesBalance = 100;
     this.pollution = 0;
     this.month = 1;
     this.year = 1;
@@ -49,7 +51,9 @@ export class GameStateStore {
 
   public updateFaction(faction: keyof FactionApproval, delta: number): void {
     this.factionApproval[faction] = Math.max(0, Math.min(100, this.factionApproval[faction] + delta));
-    this.emitChange();
+    // ponytail: no auto-emit here — the caller batches its mutations and emits
+    // once (e.g. EconomyManager.processMonthlyEconomy, EventManager.checkEndMonthProgress).
+    // Ceiling: if many mutators appear, swap to an explicit event queue.
   }
 
   public emitChange(): void {
